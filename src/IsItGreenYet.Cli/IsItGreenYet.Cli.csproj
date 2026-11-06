@@ -12,7 +12,7 @@
     <AssemblyTitle>IsItGreenYet-cli</AssemblyTitle>
     <Copyright>Copyright (c) 2026 Marvin (marvin3991)</Copyright>
     <Description>讀 IsItGreenYet 寫的狀態表，輸出一行 JSON 並用退出碼表示整體狀態</Description>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

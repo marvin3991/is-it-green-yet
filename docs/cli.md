@@ -50,7 +50,7 @@ JSON fields (in output order):
 | `state` | CLI | Result determined by the exit code table: `failure`, `in_progress`, `success`, `no_data`, or `error`. Equal to `overall` when there's no error |
 | `exitCode` | CLI | Same as the program's exit code |
 | `reason` | CLI | Reason code when `state` is `error` or `no_data` (see the exit code table); otherwise `null` |
-| `cliVersion` | CLI | The command line's own version (`0.3.0+<40-character commit>`) |
+| `cliVersion` | CLI | The command line's own version (`0.3.1+<40-character commit>`) |
 | `appVersion` | App | Version of the app that wrote the status table (same format) |
 | `generatedAt` | CLI | When the command line generated this output |
 | `snapshotAt` | App | Time of the app snapshot this status comes from |
