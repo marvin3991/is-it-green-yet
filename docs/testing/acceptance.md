@@ -178,6 +178,39 @@ M61～M63 與 M66 在 2026-11-05 做了不需要專案作者動手的部分；M6
   - 這次比較算數（Zone 3 有跳警告）。winget 裝的檔案會標成 Zone 2，所以 winget 套件應該消得掉這個警告（推論，沒有真的用 winget 裝過）。
 - **沒做**：Edge 的下載畫面；Chrome 警告的文字；從瀏覽器下載、帶網路標記的檔案按「仍要執行」之後的行為；Smart App Control。
 
+## 0.3.1 發版驗證
+
+2026-11-07 推送 tag `v0.3.1`（main 的 `c356130`，[#1](https://github.com/marvin3991/is-it-green-yet/pull/1) 的 squash）之後，照[發版流程](../building.zh-TW.md#發版流程)第 4 步驗 draft。專案作者委託操作者代做，方式和 [0.3.0](#030-發版驗證) 相同。每一項都只做了 1 次（n=1），時間是 UTC+8。
+
+- **發版 workflow**：單元測試 2,427 個全過，「檢查發行的 exe」通過。下面這幾項都和 0.3.0 相同：
+  - SDK、apphost 的來源與版本字串。
+  - 兩個 exe 的 bundle 檔數（各 9 個）。
+  - `e_sqlite3.dll` 的雜湊。
+  - host 區段的大小（188,416 與 163,840 bytes）。
+- **draft 的檔案**：兩個 exe、`SHA256SUMS.txt`、`LICENSE`、`THIRD-PARTY-NOTICES.md`。
+  - GitHub 記錄的雜湊和 `SHA256SUMS.txt` 相同。
+  - `LICENSE` 與 `THIRD-PARTY-NOTICES.md` 和 0.3.0 相同。
+  - 兩個 exe 的大小和 #1 的 CI、本機建置量的相同。
+
+  | 檔案 | 大小（bytes） | SHA-256 |
+  |---|---|---|
+  | `IsItGreenYet.exe` | 3,658,240 | `5155b671acacec36ef3a6cf6dc71ae83654f43e24b146d70e18cc8172f286f76` |
+  | `IsItGreenYet-cli.exe` | 3,334,668 | `dc1eb7c4870aceac8b6c81b2a04fb02b724ba09a98b1c29e413c54857b8ee7de` |
+
+- **下載**：用 `gh release download` 下載，沒有網路標記；用 README 的指令比對，兩個 exe 都是 `True`。這次沒有用瀏覽器下載，原因見 0.3.0。
+- **版本**：從系統匣結束原本的 App，啟動下載的 App，主視窗出現後執行 `IsItGreenYet-cli.exe status --json`。`appVersion` 與 `cliVersion` 都是 `0.3.1+c356130…`，`reason` 是空的。
+- **網路標記**：照第 4 步的指令建 Zone 2、Zone 3 兩份，電腦連網，在檔案總管雙擊。
+  - Zone 3：SmartScreen 擋下，標題、內文、按「其他資訊」之後的內容都和 0.3.0 相同。按「不要執行」。
+  - Zone 2：沒有警告，直接啟動。
+  - 這次比較算數，因為 Zone 3 有跳警告。
+- **用真實資料驗證 #1 的修正**：專案作者的帳號裡有一筆在 GitHub 上已刪除的失敗 run。它在某個 PR 分支上，是那個 workflow 的第 1 次 run，之後沒有較新的成功取代它，舊版的系統匣因此一直是紅色。
+  - 下載的 0.3.1 在 02:06:39 啟動，之後每 2 分鐘讀一次命令列的狀態。
+  - 03:05:43 那筆 run 還在，總狀態是失敗。
+  - 03:07:44 那筆 run 不在了，總狀態變成成功，退出碼 0。
+  - 這段時間 App 一直在執行。
+  - `api.log` 裡這筆 run 只有一個請求：03:06:42 查單筆 run，回 404。這是 App 啟動後 1 小時又 3 秒。App 啟動後，那個 repo 第一次抓 runs 清單是 02:06:51，這次查詢比它再過 1 小時還早 9 秒，因為重查在 App 啟動、排程時就排好了。間隔和[和設計規格的差異](../spec-deviations.md)寫的重查間隔（1 小時）一致。
+- **沒做**：用 Edge 或 Chrome 下載時的畫面；按「仍要執行」之後的行為；Smart App Control。
+
 ## 測試環境：MSIX 檔案導向
 
 2026-10-30 做第一階段手動測試時發現：從 MSIX 封裝的程式（這次是 Claude 桌面 App）啟動的行程，看到的 `%LOCALAPPDATA%` 會被 Windows 導向該套件的私有位置（`%LOCALAPPDATA%\Packages\<套件>\LocalCache\Local\`）。所以：
