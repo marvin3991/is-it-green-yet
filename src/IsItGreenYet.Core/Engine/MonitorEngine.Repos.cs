@@ -384,8 +384,10 @@ public sealed partial class MonitorEngine
         && (cls.Monitored || cls.Reason is SkipReason.NoWorkflows or SkipReason.AllWorkflowsDisabled);
 
     /// <summary>
-    /// E6 的對象（spec §4.2 E6、§6.1）：本地顯示未完成或等待、不在最近一次 E4 第 1 頁的 run，加上有操作後追蹤的 run（第二階段 spec §6.2）。
-    /// 追蹤中或被標記的用所屬 repo 的間隔，其他用 QuietMax；第一次在一個間隔之後送。完成、回到第 1 頁而且沒有待確認操作的停止追蹤。
+    /// E6 的對象（spec §4.2 E6、§6.1）：本地顯示未完成或等待、不在最近一次 E4 第 1 頁的 run，加上有操作後追蹤的 run（第二階段 spec §6.2），
+    /// 以及算成失敗的鍵要重查的 run（<see cref="FailingRecheckCandidates"/>）。
+    /// 追蹤中或被標記的用所屬 repo 的間隔，其他用 QuietMax；只因為算成失敗而重查的用 FailingRunRecheck（<see cref="RunDetailInterval"/>）。
+    /// 第一次在一個間隔之後送（失敗的 run 查到 404 之後換上來的下一筆例外，見 <see cref="RecheckNextFailuresNow"/>）。不再是對象的停止追蹤。
     /// </summary>
     private void EnsureRunDetails(RepoInfo repo)
     {
@@ -423,12 +425,82 @@ public sealed partial class MonitorEngine
         }
     }
 
-    /// <summary>這個 repo 所有該有 E6 的 run：P1 的對象（<see cref="RunDetailCandidates"/>）與操作後追蹤的 run 取聯集。</summary>
+    /// <summary>
+    /// 這個 repo 所有該有 E6 的 run：P1 的對象（<see cref="RunDetailCandidates"/>）、算成失敗而要重查的 run（<see cref="FailingRecheckCandidates"/>）
+    /// 與操作後追蹤的 run 取聯集。
+    /// </summary>
     private HashSet<long> RunDetailTargets(RepoInfo repo)
     {
-        var targets = RunDetailCandidates(Data(repo.Id), _latestPage.GetValueOrDefault(repo.Id) ?? []);
+        var page = _latestPage.GetValueOrDefault(repo.Id) ?? [];
+        var targets = RunDetailCandidates(Data(repo.Id), page);
+        targets.UnionWith(FailingRecheckCandidates(repo, page));
         targets.UnionWith(PostActionRunIds(repo.Id));
         return targets;
+    }
+
+    /// <summary>
+    /// 算成失敗的鍵（failing）要重查的 run，每個鍵最多一筆（規格沒有這一項，見 docs/spec-deviations.md）：
+    /// lastDecisive 組裡決定性結論是失敗的 run 中最新的一筆；組裡有任何一筆失敗在最近一次 E4 第 1 頁時不查，
+    /// E4 回應裡有它就表示還在，這一組一定還算失敗。同一組裡成功、取消的 run 不查：刪掉它們不會改變這一組的結論。
+    /// 在 GitHub 上被刪掉的 run 不會再出現在 E4，只有 E6 會回 404；不重查的話它一直是那個鍵的最後結論，系統匣一直是紅色。
+    /// 查到 404 之後換下一筆：同一組較舊的失敗，或較舊一組的結論。
+    /// </summary>
+    private HashSet<long> FailingRecheckCandidates(RepoInfo repo, IReadOnlyList<long> latestPage)
+    {
+        var data = Data(repo.Id);
+        var page = latestPage.ToHashSet();
+        var runs = data.Runs.DistinctBy(run => run.Id).ToDictionary(run => run.Id);
+        var candidates = new HashSet<long>();
+        foreach (var key in EvaluateKeys(repo).Where(key => key.Failing))
+        {
+            // LastDecisiveGroupRunIds 由新到舊。
+            var failures = key.LastDecisiveGroupRunIds
+                .Where(runs.ContainsKey)
+                .Select(runId => runs[runId])
+                .Where(run => DecidedFailure(run, data))
+                .ToList();
+            if (failures.Count > 0 && !failures.Any(run => page.Contains(run.Id)))
+            {
+                candidates.Add(failures[0].Id);
+            }
+        }
+
+        return candidates;
+    }
+
+    /// <summary>
+    /// 失敗的 run 查到 404 之後，這個 repo 新出現的失敗重查對象（<paramref name="before"/> 沒有的）立刻查，不等一個間隔：
+    /// 同一個鍵連續刪掉好幾次失敗時，才不會每換一筆就多等一小時。每個鍵一次只換上一筆，所以只在連續 404 時一筆接一筆。
+    /// 暫停自動更新時不查（同 <see cref="RunDetailInterval"/>）；等錯誤重試、錯誤退避中的照原本的規則排（同 <see cref="EnsureSeeds"/>）。
+    /// </summary>
+    private void RecheckNextFailuresNow(RepoInfo repo, HashSet<long> before)
+    {
+        if (!IsMonitored(repo.Id) || _refreshMode == RefreshMode.Paused)
+        {
+            return;
+        }
+
+        foreach (var runId in FailingRecheckCandidates(repo, _latestPage.GetValueOrDefault(repo.Id) ?? []))
+        {
+            var target = new PollTarget(TargetKind.RunDetail, repo.Id, runId);
+            if (before.Contains(runId) || _scheduler.Contains(target) || _current == target)
+            {
+                continue;
+            }
+
+            if (IsHeld(target) && _lastSent.ContainsKey(target))
+            {
+                EnsureRetry(target);
+                continue;
+            }
+
+            if (RestoreBackoff(target))
+            {
+                continue;
+            }
+
+            _scheduler.ScheduleNow(target, PriorityOf(target));
+        }
     }
 
     /// <summary>E6 的對象：本地顯示未完成或等待、不在最近一次 E4 第 1 頁的 run（spec §4.2 E6、§10.10 第 4 類）。</summary>

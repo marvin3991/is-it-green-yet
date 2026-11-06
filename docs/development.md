@@ -6,7 +6,7 @@
 
 ## 進度與驗收摘要
 
-> **目前進度（2026-11-06）**：版本 `0.3.0`。第一階段（唯讀監看）與第二階段（在 App 內重跑與取消 run、命令列 `IsItGreenYet-cli.exe`，見[第二階段設計規格](specs/2026-10-29-phase2-design.md)）都已實作完成。檢查新版本（[設計規格](specs/2026-10-24-design.md) §9.6）也已實作，連到真實 GitHub 的部分要等公開之後照手動測試清單的 M65 驗證。單元測試 2,417 個，2026-11-06 本機 Debug 與 Release 都跑了 2,415 個，全部通過（另外 2 個 `預設環境檢查完不持有Mutex`、`預設環境開得到App建立的刷新事件` 在 App 開著時要排除）。兩個階段的實機驗收紀錄見 [testing/acceptance.md](testing/acceptance.md)；第二階段 23 項裡通過 10 項、部分通過 12 項、沒有照設想走到 1 項（2026-10-31 補測強制取消之後）。
+> **目前進度（2026-11-07）**：版本 `0.3.1`（修正在 GitHub 上刪掉失敗的 run 之後系統匣一直是紅色，見 [spec-deviations.md](spec-deviations.md)）。第一階段（唯讀監看）與第二階段（在 App 內重跑與取消 run、命令列 `IsItGreenYet-cli.exe`，見[第二階段設計規格](specs/2026-10-29-phase2-design.md)）都已實作完成。檢查新版本（[設計規格](specs/2026-10-24-design.md) §9.6）也已實作，連到真實 GitHub 的部分要等公開之後照手動測試清單的 M65 驗證。單元測試 2,427 個，2026-11-07 本機 Debug 與 Release 都跑了 2,425 個，全部通過（另外 2 個 `預設環境檢查完不持有Mutex`、`預設環境開得到App建立的刷新事件` 在 App 開著時要排除）。兩個階段的實機驗收紀錄見 [testing/acceptance.md](testing/acceptance.md)；第二階段 23 項裡通過 10 項、部分通過 12 項、沒有照設想走到 1 項（2026-10-31 補測強制取消之後）。
 >
 > App 端沒有自動化 UI 測試，畫面與 Windows 整合的行為要照[手動測試清單](testing/manual-checklist.md)在實機確認；第一階段的手動測試清單在 2026-10-30～31 做了不需要人在場的部分（52 項裡通過 15、部分通過 15，其餘要人在場或另外的環境，見[第一階段的手動測試](testing/acceptance.md#第一階段的手動測試)），設計規格 §18 另列的實測沒有另外建沙盒：fork PR 的 run 欄位與待核准 run 的狀態改讀公開 repo 的回應，repo 改名已實測（見[第一階段的驗收](testing/acceptance.md#第一階段的驗收)）。已知的問題見[已知限制](known-limitations.zh-TW.md)，和設計規格不同的地方見 [spec-deviations.md](spec-deviations.md)。
 
@@ -16,7 +16,7 @@
 src/IsItGreenYet.Core          純邏輯（GitHub API 用戶端、監看引擎、輪詢與節流、追蹤與彙總、通知判定、資料存取、設定、日誌遮罩、兩種語言的字串表），無 UI 相依
 src/IsItGreenYet.App           WPF 介面、系統匣、提示視窗、Windows 專屬服務（單一實例、開機自啟、認證管理員、鎖定與睡眠事件、命令列刷新事件）
 src/IsItGreenYet.Cli           命令列 IsItGreenYet-cli.exe（主控台程式）：讀狀態表、輸出 JSON 與退出碼；只參考 Core
-tests/IsItGreenYet.Core.Tests  xUnit，Core 與 Cli 的測試，2,417 個（2026-11-06 跑了 2,415 個全部通過，另外 2 個見上方）
+tests/IsItGreenYet.Core.Tests  xUnit，Core 與 Cli 的測試，2,427 個（2026-11-07 跑了 2,425 個全部通過，另外 2 個見上方）
 tools/generate-icon.ps1        由向量路徑產生多尺寸 app.ico（可另外輸出預覽圖）
 tools/publish.ps1              跑測試 → 產圖示 → 輸出兩個單一執行檔（App 與命令列，都是相依框架）到 dist\
 tools/check-markdown-links.ps1 檢查所有 Markdown 的相對連結與錨點都存在（CI 會跑）
@@ -105,7 +105,7 @@ repo 內附 `commit-msg` hook（`.githooks/`），會移除 AI 工具的署名�
 |---|---|
 | [README](../README.zh-TW.md) 的「下載與安裝」 | 目前沒有發佈 release（也沒有預先建好的執行檔），要自行建置。 |
 | [使用說明](usage.zh-TW.md#範圍)的「範圍」 | Actions 以外的外部 check 排在第三階段。 |
-| [自行建置](building.zh-TW.md#兩個執行檔)的「兩個執行檔」 | 現在的大小是 2026-11-06 在本機量的（版本 `0.3.0`，發版前分支上的 `c30cf82`，兩個檔案的 ProductVersion 都是 `0.3.0+c30cf8212fb005d25472db16f69a1bfdde5bfeef`）；之後的 commit 只改不嵌進 exe 的文件。發 release 時看 workflow「檢查發行的 exe」印的大小，不同就更新。上一版的紀錄：2026-11-05 用 main 的 `3fa5841` 量（版本 `0.2.0`），`IsItGreenYet.exe`、`IsItGreenYet-cli.exe` 是 `3,539,615`、`3,211,948` bytes。之前有四個 exe 時的紀錄：2026-10-30 用 main 的 `c37402d` 建置（ProductVersion 都是 `0.2.0+c37402dbdea706249515ab7a8182c272a7391f16`），`IsItGreenYet.exe`、`IsItGreenYet-selfcontained.exe`、`IsItGreenYet-cli.exe`、`IsItGreenYet-cli-selfcontained.exe` 依序是 `3,501,215`、`159,370,462`、`3,181,740`、`76,556,169` bytes。和上一版（加上介面調整與語言選單之後，`3,355,295`、`159,224,542` bytes）相比，兩個 App 都多了 `145,920` bytes 的程式（重跑與取消、狀態表等）。 |
+| [自行建置](building.zh-TW.md#兩個執行檔)的「兩個執行檔」 | 現在的大小是 2026-11-07 在本機量的（版本 `0.3.1`，修正分支上的 `71bf920`，兩個檔案的 ProductVersion 都是 `0.3.1+71bf9203cabd8b24d0ce60825913e916d13c9c86`）；之後的 commit 只改不嵌進 exe 的文件。發 release 時看 workflow「檢查發行的 exe」印的大小，不同就更新。上一版的紀錄：2026-11-06 在私人 repo 發版前分支上的 `c30cf82` 量（版本 `0.3.0`），`IsItGreenYet.exe`、`IsItGreenYet-cli.exe` 是 `3,656,192`、`3,332,620` bytes。再上一版：2026-11-05 用 main 的 `3fa5841` 量（版本 `0.2.0`），`IsItGreenYet.exe`、`IsItGreenYet-cli.exe` 是 `3,539,615`、`3,211,948` bytes。之前有四個 exe 時的紀錄：2026-10-30 用 main 的 `c37402d` 建置（ProductVersion 都是 `0.2.0+c37402dbdea706249515ab7a8182c272a7391f16`），`IsItGreenYet.exe`、`IsItGreenYet-selfcontained.exe`、`IsItGreenYet-cli.exe`、`IsItGreenYet-cli-selfcontained.exe` 依序是 `3,501,215`、`159,370,462`、`3,181,740`、`76,556,169` bytes。和上一版（加上介面調整與語言選單之後，`3,355,295`、`159,224,542` bytes）相比，兩個 App 都多了 `145,920` bytes 的程式（重跑與取消、狀態表等）。 |
 | [已知限制](known-limitations.zh-TW.md)的「測試範圍」 | 以一般（未提升）權限執行還沒實測，列在[手動測試清單](testing/manual-checklist.md)。 |
 | [命令列](cli.zh-TW.md) | 細節見[第二階段設計規格](specs/2026-10-29-phase2-design.md) §10。「主控台程式會等結束、視窗程式不會」是第二階段設計規格 §11.1 用實驗程式量的結果；這個 exe 在各種 shell 的測試步驟是[手動測試清單](testing/manual-checklist.md)的 M60，2026-10-30 的結果見[第二階段的實測結果](testing/acceptance.md#第二階段的實測結果)的 R12。 |
 | [命令列](cli.zh-TW.md)與[例外處理](behavior.zh-TW.md#例外處理)的「舊版本」 | 使用者文件寫的「還沒有狀態表的舊版本」與「沒有刷新用事件的舊版本」，都指第一階段的版本。 |

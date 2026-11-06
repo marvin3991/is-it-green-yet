@@ -20,10 +20,10 @@ pwsh -File tools/publish.ps1
 
 | 檔案 | 是什麼 | 大小 | 需要什麼 |
 |---|---|---|---|
-| `IsItGreenYet.exe` | App | 3,656,192 bytes（約 3.49 MiB） | 電腦需已安裝 [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) |
-| `IsItGreenYet-cli.exe` | [命令列](cli.zh-TW.md) | 3,332,620 bytes（約 3.18 MiB） | 電腦需已安裝 .NET 10 Runtime（裝了 .NET 10 Desktop Runtime 就有：Desktop Runtime 的安裝程式包含 .NET Runtime） |
+| `IsItGreenYet.exe` | App | 3,658,240 bytes（約 3.49 MiB） | 電腦需已安裝 [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) |
+| `IsItGreenYet-cli.exe` | [命令列](cli.zh-TW.md) | 3,334,668 bytes（約 3.18 MiB） | 電腦需已安裝 .NET 10 Runtime（裝了 .NET 10 Desktop Runtime 就有：Desktop Runtime 的安裝程式包含 .NET Runtime） |
 
-大小是版本 `0.3.0` 某一次建置的值（MiB 以 1024² bytes 換算），每次建置都可能不同。兩個都是相依框架版（framework-dependent），不含 .NET Runtime；第一版不發自封式（self-contained），和規格不同的地方見[和設計規格的差異](spec-deviations.md)。安裝 Runtime 的指令與缺 Runtime 時的提示見 [README 的系統需求](../README.zh-TW.md#系統需求)。`dist\` 只會有這兩個檔案。命令列的 `status --json` 只讀 App 寫的狀態，命令列自己不打 GitHub API，所以 `status --json` 要搭配執行中的 App 使用（見[命令列](cli.zh-TW.md)）。
+大小是版本 `0.3.1` 某一次建置的值（MiB 以 1024² bytes 換算），每次建置都可能不同。兩個都是相依框架版（framework-dependent），不含 .NET Runtime；第一版不發自封式（self-contained），和規格不同的地方見[和設計規格的差異](spec-deviations.md)。安裝 Runtime 的指令與缺 Runtime 時的提示見 [README 的系統需求](../README.zh-TW.md#系統需求)。`dist\` 只會有這兩個檔案。命令列的 `status --json` 只讀 App 寫的狀態，命令列自己不打 GitHub API，所以 `status --json` 要搭配執行中的 App 使用（見[命令列](cli.zh-TW.md)）。
 
 ## 執行檔的注意事項
 

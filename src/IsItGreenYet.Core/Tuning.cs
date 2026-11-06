@@ -49,6 +49,12 @@ public static class Tuning
     public static readonly TimeSpan PullListTtl = TimeSpan.FromSeconds(1800);
     public static readonly TimeSpan PullListTtlActive = TimeSpan.FromSeconds(300);
     public static readonly TimeSpan SeedRecheck = TimeSpan.FromSeconds(3600);
+
+    /// <summary>
+    /// 設計選擇：算成失敗的鍵，最後結論裡最新的那筆失敗不在最近一次 E4 第 1 頁時，隔這麼久用 E6 重查一次；
+    /// 在 GitHub 上被刪掉的要靠 E6 回 404 才會發現（規格沒有這一項，見 docs/spec-deviations.md）。
+    /// </summary>
+    public static readonly TimeSpan FailingRunRecheck = TimeSpan.FromSeconds(3600);
     public const int StaleRepoDays = 90;
 
     // ── 節流（spec §6.3）───────────────────────────────────────────────

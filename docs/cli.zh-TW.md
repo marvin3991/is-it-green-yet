@@ -50,7 +50,7 @@ JSON 的欄位（依輸出的順序）：
 | `state` | 命令列 | 依退出碼表判斷的結果：`failure`、`in_progress`、`success`、`no_data`、`error`。沒有錯誤時等於 `overall` |
 | `exitCode` | 命令列 | 和程式的退出碼相同 |
 | `reason` | 命令列 | `state` 是 `error` 或 `no_data` 時的原因代碼（見退出碼表），其他時候是 `null` |
-| `cliVersion` | 命令列 | 命令列自己的版本（`0.3.0+<40 字元的 commit>`） |
+| `cliVersion` | 命令列 | 命令列自己的版本（`0.3.1+<40 字元的 commit>`） |
 | `appVersion` | App | 寫入狀態表的 App 的版本（格式同上） |
 | `generatedAt` | 命令列 | 命令列產生這份輸出的時間 |
 | `snapshotAt` | App | 這份狀態對應的 App 快照時間 |

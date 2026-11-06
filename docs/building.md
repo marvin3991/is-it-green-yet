@@ -20,10 +20,10 @@ The script first runs the full unit test suite and produces no output if any tes
 
 | File | What it is | Size | Requirements |
 |---|---|---|---|
-| `IsItGreenYet.exe` | App | 3,656,192 bytes (about 3.49 MiB) | The [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) must be installed |
-| `IsItGreenYet-cli.exe` | [Command line](cli.md) | 3,332,620 bytes (about 3.18 MiB) | The .NET 10 Runtime must be installed (installing the .NET 10 Desktop Runtime covers this: the Desktop Runtime installer includes the .NET Runtime) |
+| `IsItGreenYet.exe` | App | 3,658,240 bytes (about 3.49 MiB) | The [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) must be installed |
+| `IsItGreenYet-cli.exe` | [Command line](cli.md) | 3,334,668 bytes (about 3.18 MiB) | The .NET 10 Runtime must be installed (installing the .NET 10 Desktop Runtime covers this: the Desktop Runtime installer includes the .NET Runtime) |
 
-The sizes are from one build of version `0.3.0` (MiB = 1024² bytes) and change from build to build. Both are framework-dependent and don't include the .NET runtime; the first release has no self-contained builds, which differs from the specs (see [Deviations from the design specs](spec-deviations.md) (Traditional Chinese)). For the command that installs the runtime and the message you get when it's missing, see [System requirements](../README.md#system-requirements) in the README. `dist\` contains only these two files. The command line's `status --json` only reads the status written by the app, and the command line never calls the GitHub API itself, so `status --json` has to be used with the app running (see [Command line](cli.md)).
+The sizes are from one build of version `0.3.1` (MiB = 1024² bytes) and change from build to build. Both are framework-dependent and don't include the .NET runtime; the first release has no self-contained builds, which differs from the specs (see [Deviations from the design specs](spec-deviations.md) (Traditional Chinese)). For the command that installs the runtime and the message you get when it's missing, see [System requirements](../README.md#system-requirements) in the README. `dist\` contains only these two files. The command line's `status --json` only reads the status written by the app, and the command line never calls the GitHub API itself, so `status --json` has to be used with the app running (see [Command line](cli.md)).
 
 ## Running the executables
 

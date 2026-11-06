@@ -15,7 +15,7 @@
     <AssemblyTitle>IsItGreenYet</AssemblyTitle>
     <Copyright>Copyright (c) 2026 Marvin (marvin3991)</Copyright>
     <Description>一眼看到自己名下所有 repo 的 GitHub Actions 是否綠燈</Description>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <!--
       衛星資源只帶介面的兩種語言（設定頁的語言選單）。目前只發相依框架版（docs/spec-deviations.md）：
       WPF 內建文字（輸入框右鍵的剪下／複製／貼上等，UI 執行緒的文化 zh-TW 依序找 zh-Hant）用目標電腦
