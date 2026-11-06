@@ -845,7 +845,7 @@ public sealed partial class MonitorEngine
     }
 
     /// <summary>
-    /// 單筆 run（E6）：完成或回 404 就停止；404 只標成已不存在，不觸發 §5.4。有操作後追蹤時（第二階段 spec §6.2）
+    /// 單筆 run（E6）：完成（要重查的失敗 run 除外）或回 404 就停止；404 只標成已不存在，不觸發 §5.4。有操作後追蹤時（第二階段 spec §6.2）
     /// 每次回應（200、304）先判斷結束條件、再累計回應與判斷放棄，沒結束就照追蹤的間隔重排，已完成的 run 也一樣。
     /// </summary>
     private async Task<int> ProcessRunDetailAsync(PollTarget target, CancellationToken ct)
@@ -873,6 +873,9 @@ public sealed partial class MonitorEngine
                 break;
 
             case ApiOutcome.NotFound:
+                // 標成已不存在之前的失敗重查對象：之後換上來的下一筆立刻查（RecheckNextFailuresNow）。
+                var recheckBefore = FailingRecheckCandidates(repo, _latestPage.GetValueOrDefault(repo.Id) ?? []);
+
                 // 過了保留期或被刪掉：標成已不存在並移出追蹤，保留本地紀錄（spec §4.2 E6）。
                 // 待確認的操作先清除（第二階段 spec §6.2 第 5 點），取消標記時才不會照它的間隔再排一次 E6。
                 ForgetPostActions(runId);
@@ -883,6 +886,7 @@ public sealed partial class MonitorEngine
                 }
 
                 Invalidate(repo.Id);
+                RecheckNextFailuresNow(repo, recheckBefore);
                 return requests;
 
             default:
@@ -892,7 +896,7 @@ public sealed partial class MonitorEngine
 
         OnRunDetailAnswered(runId);
 
-        // 已完成（或回到第 1 頁）而且沒有待確認的操作：不再是 E6 的對象，停止。
+        // 已完成（或回到第 1 頁）、沒有待確認的操作，也不是要重查的失敗 run：不再是 E6 的對象，停止。
         if (IsMonitored(repo.Id) && RunDetailTargets(repo).Contains(runId))
         {
             Reschedule(target, WithPollInterval(RunDetailInterval(repo, runId), result.PollInterval));

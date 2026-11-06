@@ -781,13 +781,25 @@ public sealed partial class MonitorEngine
     /// <summary>
     /// E6：追蹤中或被標記的用所屬 repo 的間隔，其他用 QuietMax（spec §6.1）。有操作後追蹤的 run 照第二階段 spec §6.2 的表
     /// （<see cref="PostActionInterval"/>，不看自動更新模式）；它同時也是 P1 的對象（本地未完成、不在第 1 頁）時取兩者較短的。
+    /// 不是 P1 的對象、只因為算成失敗而重查的（<see cref="FailingRecheckCandidates"/>）用 FailingRunRecheck，暫停自動更新時不排；
+    /// 同時有操作後追蹤時取兩者較短的。
     /// </summary>
     private TimeSpan? RunDetailInterval(RepoInfo repo, long runId)
     {
         var postAction = PostActionInterval(runId);
-        if (postAction is not null && !RunDetailCandidates(Data(repo.Id), _latestPage.GetValueOrDefault(repo.Id) ?? []).Contains(runId))
+        var page = _latestPage.GetValueOrDefault(repo.Id) ?? [];
+        if (!RunDetailCandidates(Data(repo.Id), page).Contains(runId))
         {
-            return postAction;
+            if (FailingRecheckCandidates(repo, page).Contains(runId))
+            {
+                var recheck = IntervalPolicy.Periodic(Tuning.FailingRunRecheck, _refreshMode, Stretch(), _locked, followsRefreshMode: false);
+                return Shorter(postAction, recheck);
+            }
+
+            if (postAction is not null)
+            {
+                return postAction;
+            }
         }
 
         var tracked = _watched.Contains(runId)
