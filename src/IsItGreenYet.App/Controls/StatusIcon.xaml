@@ -1,0 +1,45 @@
+<UserControl
+    x:Class="IsItGreenYet.App.Controls.StatusIcon"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="{StaticResource Size.StatusIcon}"
+    Height="{StaticResource Size.StatusIcon}"
+    Focusable="False"
+    IsTabStop="False">
+    <!--
+        清單列的狀態圖示（spec §7.1、§16.2）：形狀＋顏色，加上 AutomationProperties.Name 與 tooltip，不只靠顏色。
+        16x16 座標系，同 SAM 的 Geometry.* 線條圖示；圓心 (8,8)、半徑 6，筆畫 2 時外緣剛好落在 1～15。
+    -->
+    <UserControl.Resources>
+        <!--  圓（Geometry.Status.Circle）與叉（Geometry.Status.Cross）錯誤對話框也用，放在 Themes/Controls.xaml  -->
+        <!--  進行中：從正上方順時針畫 3/4 圈，旋轉的就是這段圓弧  -->
+        <StreamGeometry x:Key="Geometry.Status.Arc">M 8,2 A 6,6 0 1 1 2,8</StreamGeometry>
+        <StreamGeometry x:Key="Geometry.Status.Check">M 5,8.3 L 7.1,10.4 L 11,6.2</StreamGeometry>
+        <StreamGeometry x:Key="Geometry.Status.ClockHands">M 8,4.8 V 8 L 10.3,9.5</StreamGeometry>
+        <StreamGeometry x:Key="Geometry.Status.Slash">M 4.8,11.2 L 11.2,4.8</StreamGeometry>
+        <StreamGeometry x:Key="Geometry.Status.Dash">M 5,8 H 11</StreamGeometry>
+        <StreamGeometry x:Key="Geometry.Status.Question">M 6,6.5 C 6,4.5 10,4.5 10,6.5 C 10,8 8,8 8,9.6</StreamGeometry>
+        <!--  兩個點也有筆畫（同樣 2），所以幾何半徑是看到的半徑減 1  -->
+        <StreamGeometry x:Key="Geometry.Status.CenterDot">M 7.2,8 A 0.8,0.8 0 1 1 8.8,8 A 0.8,0.8 0 1 1 7.2,8 Z</StreamGeometry>
+        <StreamGeometry x:Key="Geometry.Status.QuestionDot">M 7.85,11.6 A 0.15,0.15 0 1 1 8.15,11.6 A 0.15,0.15 0 1 1 7.85,11.6 Z</StreamGeometry>
+    </UserControl.Resources>
+
+    <Grid>
+        <!--  外框：空心圓、實心圓或旋轉的圓弧  -->
+        <Path
+            x:Name="Ring"
+            RenderTransformOrigin="0.5,0.5"
+            Style="{StaticResource Style.Path.StatusIcon}">
+            <Path.RenderTransform>
+                <RotateTransform x:Name="Spin" />
+            </Path.RenderTransform>
+        </Path>
+        <!--  圓裡的記號：勾、叉、時鐘指針、斜線、短橫線、問號  -->
+        <Path x:Name="Glyph" Style="{StaticResource Style.Path.StatusIcon}" />
+        <!--  實心的點：排隊的中心點、問號下面的點  -->
+        <Path
+            x:Name="Dot"
+            Fill="{Binding Stroke, RelativeSource={RelativeSource Self}}"
+            Style="{StaticResource Style.Path.StatusIcon}" />
+    </Grid>
+</UserControl>

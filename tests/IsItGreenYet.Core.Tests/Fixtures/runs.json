@@ -1,0 +1,190 @@
+{
+  "total_count": 6,
+  "workflow_runs": [
+    {
+      "id": 9001,
+      "name": "CI",
+      "display_title": "Fix login button",
+      "run_number": 42,
+      "run_attempt": 1,
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "workflow_id": 161335,
+      "head_branch": "main",
+      "head_sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+      "path": ".github/workflows/ci.yml",
+      "actor": { "login": "alice", "id": 1001, "type": "User" },
+      "triggering_actor": { "login": "alice", "id": 1001, "type": "User" },
+      "run_started_at": "2026-10-24T01:58:20Z",
+      "created_at": "2026-10-24T01:58:15Z",
+      "updated_at": "2026-10-24T02:01:32Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9001",
+      "pull_requests": [],
+      "head_repository": {
+        "id": 2001,
+        "name": "sample-app",
+        "full_name": "octo-org/sample-app",
+        "html_url": "https://github.com/octo-org/sample-app"
+      },
+      "repository": { "id": 2001, "full_name": "octo-org/sample-app" },
+      "previous_attempt_url": null
+    },
+    {
+      "id": 9002,
+      "name": null,
+      "display_title": "Add dark mode\n\nAlso tidies the settings page",
+      "run_number": 43,
+      "event": "pull_request",
+      "status": "in_progress",
+      "conclusion": null,
+      "workflow_id": 161335,
+      "head_branch": "feature/dark-mode",
+      "head_sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+      "path": ".github/workflows/ci.yml",
+      "actor": { "login": "bob", "id": 1002, "type": "User" },
+      "triggering_actor": { "login": "bob", "id": 1002, "type": "User" },
+      "run_started_at": "2026-10-24T02:05:01Z",
+      "created_at": "2026-10-24T02:04:58Z",
+      "updated_at": "2026-10-24T02:06:40Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9002",
+      "pull_requests": [
+        {
+          "id": 77017,
+          "number": 17,
+          "url": "https://api.github.com/repos/octo-org/sample-app/pulls/17",
+          "head": {
+            "ref": "feature/dark-mode",
+            "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+            "repo": { "id": 2001, "name": "sample-app", "url": "https://api.github.com/repos/octo-org/sample-app" }
+          },
+          "base": {
+            "ref": "main",
+            "sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+            "repo": { "id": 2001, "name": "sample-app", "url": "https://api.github.com/repos/octo-org/sample-app" }
+          }
+        }
+      ],
+      "head_repository": {
+        "id": 2001,
+        "name": "sample-app",
+        "full_name": "octo-org/sample-app",
+        "html_url": "https://github.com/octo-org/sample-app"
+      },
+      "repository": { "id": 2001, "full_name": "octo-org/sample-app" },
+      "previous_attempt_url": null
+    },
+    {
+      "id": 9003,
+      "name": "Nightly",
+      "display_title": "Nightly",
+      "run_number": 7,
+      "run_attempt": 1,
+      "event": "schedule",
+      "status": "queued",
+      "conclusion": null,
+      "workflow_id": 161337,
+      "head_branch": null,
+      "head_sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+      "path": ".github/workflows/nightly.yml",
+      "run_started_at": null,
+      "created_at": "2026-10-24T02:00:03Z",
+      "updated_at": "2026-10-24T02:00:03Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9003",
+      "pull_requests": [],
+      "head_repository": {
+        "id": 2001,
+        "name": "sample-app",
+        "full_name": "octo-org/sample-app",
+        "html_url": "https://github.com/octo-org/sample-app"
+      },
+      "repository": { "id": 2001, "full_name": "octo-org/sample-app" }
+    },
+    {
+      "id": 9004,
+      "name": "CI",
+      "display_title": "Fix typo in README",
+      "run_number": 40,
+      "run_attempt": 1,
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "failure",
+      "workflow_id": 161335,
+      "head_branch": "patch-1",
+      "head_sha": "f00dbabe0123456789abcdef0123456789abcdef",
+      "path": ".github/workflows/ci.yml",
+      "actor": { "login": "fork-user", "id": 5001, "type": "User" },
+      "triggering_actor": { "login": "fork-user", "id": 5001, "type": "User" },
+      "run_started_at": "2026-10-23T23:10:00Z",
+      "created_at": "2026-10-23T23:09:55Z",
+      "updated_at": "2026-10-23T23:14:12Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9004",
+      "pull_requests": [],
+      "head_repository_id": 2001,
+      "head_repository": {
+        "id": 4001,
+        "name": "sample-app",
+        "full_name": "fork-user/sample-app",
+        "html_url": "https://github.com/fork-user/sample-app"
+      },
+      "repository": { "id": 2001, "full_name": "octo-org/sample-app" }
+    },
+    {
+      "id": 9005,
+      "name": "Dependabot Updates",
+      "display_title": "Dependabot Updates",
+      "run_number": 12,
+      "run_attempt": 1,
+      "event": "dynamic",
+      "status": "completed",
+      "conclusion": "success",
+      "workflow_id": 161338,
+      "head_branch": "main",
+      "head_sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+      "path": "dynamic/dependabot/dependabot-updates",
+      "actor": { "login": "dependabot[bot]", "id": 6001, "type": "Bot" },
+      "triggering_actor": { "login": "dependabot[bot]", "id": 6001, "type": "Bot" },
+      "run_started_at": "2026-10-23T20:00:10Z",
+      "created_at": "2026-10-23T20:00:05Z",
+      "updated_at": "2026-10-23T20:02:00Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9005",
+      "pull_requests": [],
+      "head_repository": {
+        "id": 2001,
+        "name": "sample-app",
+        "full_name": "octo-org/sample-app",
+        "html_url": "https://github.com/octo-org/sample-app"
+      },
+      "repository": { "id": 2001, "full_name": "octo-org/sample-app" }
+    },
+    {
+      "id": 9006,
+      "name": "CI",
+      "display_title": "Bump version",
+      "run_number": 41,
+      "run_attempt": 2,
+      "event": "push",
+      "status": "completed",
+      "conclusion": "failure",
+      "workflow_id": 161335,
+      "head_branch": "main",
+      "head_sha": "0123456789abcdef0123456789abcdef01234567",
+      "path": ".github/workflows/ci.yml",
+      "actor": { "login": "alice", "id": 1001, "type": "User" },
+      "triggering_actor": { "login": "bob", "id": 1002, "type": "User" },
+      "run_started_at": "2026-10-24T01:40:00Z",
+      "created_at": "2026-10-24T01:20:00Z",
+      "updated_at": "2026-10-24T01:45:10Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9006",
+      "pull_requests": [],
+      "head_repository": {
+        "id": 2001,
+        "name": "sample-app",
+        "full_name": "octo-org/sample-app",
+        "html_url": "https://github.com/octo-org/sample-app"
+      },
+      "repository": { "id": 2001, "full_name": "octo-org/sample-app" },
+      "previous_attempt_url": "https://api.github.com/repos/octo-org/sample-app/actions/runs/9006/attempts/1"
+    }
+  ]
+}

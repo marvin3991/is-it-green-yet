@@ -1,0 +1,99 @@
+<Window
+    x:Class="IsItGreenYet.App.Views.ErrorDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:interop="clr-namespace:IsItGreenYet.App.Interop"
+    xmlns:l="clr-namespace:IsItGreenYet.App.Localization"
+    Title="IsItGreenYet"
+    Width="{StaticResource Size.Dialog.Width}"
+    interop:DwmFrame.Corner="Round"
+    AllowsTransparency="False"
+    Background="{StaticResource Brush.Surface}"
+    BorderBrush="{StaticResource Brush.Border}"
+    BorderThickness="{StaticResource Thickness.Border.Standard}"
+    FocusManager.FocusedElement="{Binding ElementName=OkButton}"
+    FontFamily="{StaticResource FontFamily.Default}"
+    Icon="../Assets/app.ico"
+    PreviewKeyDown="OnPreviewKeyDown"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="Height"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    UseLayoutRounding="True"
+    WindowStartupLocation="CenterOwner"
+    WindowStyle="None">
+    <!--
+        錯誤對話框（App.ShowError；spec §15 的「顯示錯誤」）：取代系統 MessageBox（淺色、Windows 7 式的按鈕與圖示，和深色的 App 不搭）。
+        仿 Windows 11 的 ContentDialog：不透明視窗，圓角、陰影與框線色交給 DWM（Interop/DwmFrame.cs）；
+        內容區是錯誤圖示＋標題、可以選取複製的訊息；按鈕列另一層，「確定」用強調色，Enter 與 Esc 都能關。
+        訊息超過最大高度時，焦點不論在哪裡都能用 ↑↓、PageUp／PageDown、Home／End 捲動（OnPreviewKeyDown）。
+        沒有標題列，在空白處按住可以拖曳（系統 MessageBox 也能拖）。
+    -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="{StaticResource Padding.Dialog}">
+            <StackPanel Orientation="Horizontal">
+                <!--  錯誤圖示：清單列狀態圖示的失敗形狀（Danger 實心圓＋深色叉），放大到 Size.Dialog.Icon  -->
+                <Viewbox
+                    Width="{StaticResource Size.Dialog.Icon}"
+                    Height="{StaticResource Size.Dialog.Icon}"
+                    Margin="{StaticResource Margin.Dialog.Icon}"
+                    VerticalAlignment="Center">
+                    <Grid Width="{StaticResource Size.StatusIcon}" Height="{StaticResource Size.StatusIcon}">
+                        <Path
+                            Data="{StaticResource Geometry.Status.Circle}"
+                            Fill="{StaticResource Brush.Danger}"
+                            Style="{StaticResource Style.Path.StatusIcon}"
+                            Tag="Failure" />
+                        <Path
+                            Data="{StaticResource Geometry.Status.Cross}"
+                            Stroke="{StaticResource Brush.Accent.Foreground}"
+                            Style="{StaticResource Style.Path.StatusIcon}" />
+                    </Grid>
+                </Viewbox>
+                <TextBlock
+                    x:Name="TitleText"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource Style.Text.Title}" />
+            </StackPanel>
+
+            <TextBox
+                x:Name="MessageText"
+                MaxHeight="{StaticResource Size.Dialog.MessageMaxHeight}"
+                Margin="{StaticResource Margin.Gap.Top.Large}"
+                AutomationProperties.Name="{l:T DialogErrorMessage}"
+                Style="{StaticResource Style.TextBox.Message}" />
+        </StackPanel>
+
+        <!--
+            按鈕列：「確定」放在右半邊（Windows 11 對話框的按鈕平分寬度，只有一顆時佔右半；設計選擇）。
+            IsDefault＋IsCancel：Enter、Esc、點按都走 IsCancel 的關閉對話框，不另外掛 Click。
+        -->
+        <Border
+            Grid.Row="1"
+            Padding="{StaticResource Padding.Dialog}"
+            Background="{StaticResource Brush.Window.Background}"
+            BorderBrush="{StaticResource Brush.Surface.Hover}"
+            BorderThickness="{StaticResource Thickness.Border.Top}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button
+                    x:Name="OkButton"
+                    Grid.Column="1"
+                    Margin="{StaticResource Margin.Gap.Left}"
+                    Content="{l:T CommonOk}"
+                    IsCancel="True"
+                    IsDefault="True"
+                    Style="{StaticResource Style.Button.Accent}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

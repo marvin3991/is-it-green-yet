@@ -1,0 +1,22 @@
+<Application
+    x:Class="IsItGreenYet.App.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Design.xaml" />
+                <ResourceDictionary Source="Themes/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--
+                標題列用的線條圖示（同 SAM），16x16 座標系，以線段描邊繪製，以 (8,8) 為中心（Style.Path.Icon 固定 16x16）。
+                置頂的直線下端原本在 13.5（上緣 3），整個圖示偏下 0.25，改成 13 讓上下對稱。
+            -->
+            <StreamGeometry x:Key="Geometry.Pin">M 3,3 H 13 M 8,13 V 6 M 5,9 L 8,6 L 11,9</StreamGeometry>
+            <StreamGeometry x:Key="Geometry.Settings">M 2,5.5 H 14 M 2,10.5 H 14 M 5.5,3.5 V 7.5 M 10.5,8.5 V 12.5</StreamGeometry>
+            <StreamGeometry x:Key="Geometry.Close">M 4,4 L 12,12 M 12,4 L 4,12</StreamGeometry>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 主控台子系統：三種 shell 都會等它結束、拿得到退出碼（第二階段 spec §11.1、D2） -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>IsItGreenYet-cli</AssemblyName>
+    <RootNamespace>IsItGreenYet.Cli</RootNamespace>
+    <Product>IsItGreenYet</Product>
+    <AssemblyTitle>IsItGreenYet-cli</AssemblyTitle>
+    <Copyright>Copyright (c) 2026 Marvin (marvin3991)</Copyright>
+    <Description>讀 IsItGreenYet 寫的狀態表，輸出一行 JSON 並用退出碼表示整體狀態</Description>
+    <Version>0.3.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 只參考 Core（第二階段 spec §10.7）；不新增任何套件 -->
+    <ProjectReference Include="..\IsItGreenYet.Core\IsItGreenYet.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 讓測試專案能直接驗證 internal 的判斷與輸出 -->
+    <InternalsVisibleTo Include="IsItGreenYet.Core.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,28 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- 每個專案的 packages.lock.json 鎖住直接與間接相依的版本。更新套件的做法見 docs/development.md 的「鎖版本」。 -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+    <!-- GitHub Actions 會設 CI=true：專案的相依或平台和 lock 檔不符時，還原就失敗（NU1004）。本機照常更新 lock 檔。 -->
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+
+    <!-- tools/publish.ps1 用 -r win-x64 發行，這個平台也要在 lock 檔裡，否則發行時的還原會報 NU1004。 -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+
+    <!--
+      上一行預設會讓每次還原都下載 3 個 runtime pack（版本跟著 SDK 走，不在 lock 檔裡），相依框架版用不到。
+      這裡只看得到命令列的值，要發自封式時用命令列的 -self-contained true。
+      關掉之後 ILLink 也不會被還原，手動跑單一檔案分析器要同時開回來，見 docs/development.md 的「鎖版本」。
+    -->
+    <EnableRuntimePackDownload Condition="'$(SelfContained)' != 'true'">false</EnableRuntimePackDownload>
+
+    <!--
+      PublishSingleFile 預設會開單一檔案分析器，分析器要還原 Microsoft.NET.ILLink.Tasks，版本跟著 SDK 走。
+      global.json 允許較新的 SDK，這個套件留在 lock 檔的話，runner 的 SDK 一更新，發行就會報 NU1004。
+      分析器只產生警告；要手動跑一次見 docs/development.md 的「鎖版本」。
+    -->
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
+  </PropertyGroup>
+
+</Project>

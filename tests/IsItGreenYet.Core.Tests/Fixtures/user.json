@@ -1,0 +1,8 @@
+{
+  "login": "alice",
+  "id": 1001,
+  "type": "User",
+  "site_admin": false,
+  "name": "Alice Example",
+  "html_url": "https://github.com/alice"
+}

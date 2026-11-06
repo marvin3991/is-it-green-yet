@@ -1,0 +1,40 @@
+[
+  {
+    "id": 2001,
+    "name": "sample-app",
+    "full_name": "octo-org/sample-app",
+    "owner": {
+      "login": "octo-org",
+      "id": 3001,
+      "type": "Organization"
+    },
+    "private": false,
+    "visibility": "public",
+    "fork": false,
+    "archived": false,
+    "disabled": false,
+    "pushed_at": "2026-10-24T01:58:12Z",
+    "default_branch": "main",
+    "html_url": "https://github.com/octo-org/sample-app",
+    "open_issues_count": 3
+  },
+  {
+    "id": 2002,
+    "name": "sample-notes",
+    "full_name": "alice/sample-notes",
+    "owner": {
+      "login": "alice",
+      "id": 1001,
+      "type": "User"
+    },
+    "private": true,
+    "visibility": "private",
+    "fork": false,
+    "archived": true,
+    "disabled": false,
+    "pushed_at": null,
+    "default_branch": "trunk",
+    "html_url": "https://github.com/alice/sample-notes",
+    "open_issues_count": 0
+  }
+]

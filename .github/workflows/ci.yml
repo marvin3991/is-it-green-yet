@@ -1,0 +1,79 @@
+# 只做檢查：文件連結、還原、lock 檔、建置、單元測試、發行。不部署、不發版、不用 secrets。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: 建置與測試
+    # App 專案是 WPF＋WinForms（net10.0-windows），只能在 Windows 建置。
+    runs-on: windows-latest
+    # 2026-11-02～05 最近 40 次成功的 job 是 448～1,104 秒，主要花在單元測試；lock 檢查與發行再多約 32 秒，檢查發行的 exe 約 4 秒（2026-11-06 的 dry-run）。上限抓 30 分鐘。
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # 放在最前面：斷連結就不必等建置。
+      - name: 檢查文件連結
+        run: |
+          chcp 65001 > $null
+          ./tools/check-markdown-links.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          # SDK 版本照 global.json（10.0.401，rollForward latestFeature）。
+          # 不開 setup-dotnet 的套件快取：還原本來就快（2026-11-05 main 的 5 次 run 是 15～26 秒），省不了多少。
+          global-json-file: global.json
+
+      # GitHub Actions 會設 CI=true，Directory.Build.props 因此開鎖定模式：專案的相依或平台和 lock 檔不符時這一步就失敗。
+      - name: 還原套件
+        run: |
+          chcp 65001 > $null
+          dotnet restore IsItGreenYet.slnx
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # lock 檔不見時還原不會失敗，而是重新產生一份，所以還原之後要再看一次。
+      - name: 檢查 lock 檔
+        run: |
+          chcp 65001 > $null
+          ./tools/check-lock-files.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: 建置
+        run: |
+          chcp 65001 > $null
+          dotnet build IsItGreenYet.slnx -c Release --no-restore
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: 單元測試
+        run: |
+          chcp 65001 > $null
+          dotnet test IsItGreenYet.slnx -c Release --no-build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # 發行時的還原多了 -r win-x64 與 PublishSingleFile，只有這條路壞掉的話，不跑這一步要到打 tag 才看得到。
+      # 也檢查發行的 exe 是否還符合第三方聲明的依據。輸出不上傳。
+      - name: 發行（只檢查）
+        run: |
+          chcp 65001 > $null
+          pwsh -NoProfile -File tools/publish.ps1 -SkipTests -OutputDirectory (Join-Path $env:RUNNER_TEMP 'publish-check')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pwsh -NoProfile -File tools/check-release-exes.ps1 -Directory (Join-Path $env:RUNNER_TEMP 'publish-check')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./tools/check-lock-files.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

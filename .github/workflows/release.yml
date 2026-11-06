@@ -1,0 +1,159 @@
+# 發版：push v*.*.* tag 時建 draft release，專案作者確認後手動按 Publish。不用 GITHUB_TOKEN 以外的 secrets。
+# workflow_dispatch 是 dry-run：跑版本檢查、建置（含完整單元測試）、雜湊，把產物上傳成 artifact，不建 release。
+# 流程見 docs/building.zh-TW.md 的「發版流程」。
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 依 tag 分組，不取消進行中的發版。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # 只有 push tag 才是正式發版；workflow_dispatch 就算選了 tag 也是 dry-run。空字串表示 dry-run。
+  RELEASE_TAG: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+
+jobs:
+  build:
+    name: 檢查、建置與雜湊
+    # App 專案是 WPF＋WinForms（net10.0-windows），只能在 Windows 建置。
+    runs-on: windows-latest
+    # CI（還原、建置、測試）實際約 8～19 分鐘，這裡再多 2 次 publish，上限抓 40 分鐘。
+    timeout-minutes: 40
+    outputs:
+      commit: ${{ steps.built.outputs.commit }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # 要確認 tag 指向的 commit 在 main 上，需要完整歷史。
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          # SDK 版本照 global.json，同 ci.yml。
+          global-json-file: global.json
+
+      - name: 發版前檢查
+        run: |
+          chcp 65001 > $null
+          if ($env:RELEASE_TAG) {
+            pwsh -NoProfile -File tools/release-check.ps1 -Tag $env:RELEASE_TAG
+          }
+          else {
+            pwsh -NoProfile -File tools/release-check.ps1
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: 記下這次建置的 commit
+        id: built
+        run: |
+          chcp 65001 > $null
+          $commit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "commit=$commit" >> $env:GITHUB_OUTPUT
+
+      - name: 單元測試與建置兩個 exe
+        run: |
+          chcp 65001 > $null
+          pwsh -NoProfile -File tools/publish.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # lock 檔不見時還原不會失敗，而是重新產生一份；這裡擋住用重新解析的版本發行。
+      - name: 檢查 lock 檔
+        run: |
+          chcp 65001 > $null
+          ./tools/check-lock-files.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # 第三方聲明依據的事實（bundle 清單、e_sqlite3.dll、host 區段、著作權欄位），不符就不產生 release。
+      - name: 檢查發行的 exe
+        run: |
+          chcp 65001 > $null
+          pwsh -NoProfile -File tools/check-release-exes.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: 產生 SHA256SUMS.txt 與發行檔資料夾
+        run: |
+          chcp 65001 > $null
+          pwsh -NoProfile -File tools/release-package.ps1 -OutputDirectory (Join-Path $env:RUNNER_TEMP 'release-files')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: ${{ runner.temp }}/release-files
+          if-no-files-found: error
+          # 夠看完 dry-run 的產物，也夠重跑失敗的 release job。
+          retention-days: 7
+
+  release:
+    name: 建立 draft release
+    needs: build
+    if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+    runs-on: windows-latest
+    # 只有下載 artifact 與上傳 5 個檔案（最大的約 3.5 MiB）。
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: release-files
+
+      - name: tag 被移動過就中止
+        # 發行檔是 build job 那個 commit 建的；gh release create 只確認 tag 存在，不看它指向哪裡。
+        env:
+          BUILT_COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          chcp 65001 > $null
+          $tagCommit = gh api "repos/$env:GITHUB_REPOSITORY/commits/refs/tags/$env:RELEASE_TAG" --jq '.sha'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($tagCommit -cne $env:BUILT_COMMIT) {
+            Write-Host "::error::tag $env:RELEASE_TAG 現在指向 $tagCommit，不是這次建置的 $env:BUILT_COMMIT，不建立 release。"
+            exit 1
+          }
+
+      - name: 同名 release 已存在就中止
+        # draft 要有 contents: write 才看得到，所以放在這個 job。
+        run: |
+          chcp 65001 > $null
+          $tags = gh api --paginate "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" --jq '.[].tag_name'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (@($tags) -ccontains $env:RELEASE_TAG) {
+            Write-Host "::error::已經有同名的 release（$env:RELEASE_TAG，可能是 draft），不覆蓋。要重發就先到 Releases 頁面確認並刪除它，再重跑這個 job。"
+            exit 1
+          }
+
+      - name: 建立 draft release
+        run: |
+          chcp 65001 > $null
+          $arguments = @(
+            $env:RELEASE_TAG
+            '--repo', $env:GITHUB_REPOSITORY
+            '--draft'
+            '--verify-tag'
+            '--generate-notes'
+            '--title', $env:RELEASE_TAG
+          )
+          # /releases/latest 不回 prerelease，所以 App 不會通知這種版本。
+          if ($env:RELEASE_TAG.Contains('-')) { $arguments += '--prerelease' }
+          $arguments += @(Get-ChildItem -LiteralPath release-files -File | ForEach-Object { $_.FullName })
+          gh release create @arguments
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

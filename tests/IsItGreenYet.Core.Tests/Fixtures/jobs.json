@@ -1,0 +1,27 @@
+{
+  "total_count": 3,
+  "jobs": [
+    {
+      "id": 7001,
+      "run_id": 9006,
+      "run_attempt": 2,
+      "name": "build",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-24T01:40:05Z",
+      "completed_at": "2026-10-24T01:42:00Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9006/job/7001"
+    },
+    {
+      "id": 7002,
+      "run_id": 9006,
+      "run_attempt": 2,
+      "name": "test (ubuntu-latest)",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-24T01:42:05Z",
+      "completed_at": "2026-10-24T01:45:00Z",
+      "html_url": "https://github.com/octo-org/sample-app/actions/runs/9006/job/7002"
+    }
+  ]
+}

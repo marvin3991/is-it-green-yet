@@ -1,0 +1,45 @@
+{
+  "id": 9002,
+  "name": "CI",
+  "display_title": "Add dark mode",
+  "run_number": 43,
+  "run_attempt": 1,
+  "event": "pull_request",
+  "status": "completed",
+  "conclusion": "success",
+  "workflow_id": 161335,
+  "head_branch": "feature/dark-mode",
+  "head_sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+  "path": ".github/workflows/ci.yml",
+  "actor": { "login": "bob", "id": 1002, "type": "User" },
+  "triggering_actor": { "login": "bob", "id": 1002, "type": "User" },
+  "run_started_at": "2026-10-24T10:05:01+08:00",
+  "created_at": "2026-10-24T02:04:58Z",
+  "updated_at": "2026-10-24T02:09:30Z",
+  "html_url": "https://github.com/octo-org/sample-app/actions/runs/9002",
+  "pull_requests": [
+    {
+      "id": 77017,
+      "number": 17,
+      "url": "https://api.github.com/repos/octo-org/sample-app/pulls/17",
+      "head": {
+        "ref": "feature/dark-mode",
+        "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+        "repo": { "id": 2001, "name": "sample-app", "url": "https://api.github.com/repos/octo-org/sample-app" }
+      },
+      "base": {
+        "ref": "main",
+        "sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+        "repo": { "id": 2001, "name": "sample-app", "url": "https://api.github.com/repos/octo-org/sample-app" }
+      }
+    }
+  ],
+  "head_repository": {
+    "id": 2001,
+    "name": "sample-app",
+    "full_name": "octo-org/sample-app",
+    "html_url": "https://github.com/octo-org/sample-app"
+  },
+  "repository": { "id": 2001, "full_name": "octo-org/sample-app" },
+  "previous_attempt_url": null
+}

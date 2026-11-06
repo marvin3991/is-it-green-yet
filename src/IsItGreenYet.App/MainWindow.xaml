@@ -1,0 +1,633 @@
+<Window
+    x:Class="IsItGreenYet.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:IsItGreenYet.App.Controls"
+    xmlns:l="clr-namespace:IsItGreenYet.App.Localization"
+    xmlns:themes="clr-namespace:IsItGreenYet.App.Themes"
+    xmlns:vm="clr-namespace:IsItGreenYet.App.ViewModels"
+    Title="IsItGreenYet"
+    Icon="Assets/app.ico"
+    PreviewKeyDown="OnWindowPreviewKeyDown"
+    ShowInTaskbar="True"
+    Style="{StaticResource Style.Window.Resizable}"
+    WindowStartupLocation="Manual">
+    <!--  主畫面（spec §10）：標題列、橫幅、摘要列、篩選列、run 清單與空狀態  -->
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <!--
+            run 的右鍵選單；⋯ 按鈕開的也是同一個實例（PlacementTarget 換成按鈕）。
+            DataContext 在開啟前由程式設成那一列的 RunRowViewModel（列的 ContextMenuOpening、⋯ 的 Click），開著的期間不變。
+            不綁 PlacementTarget.DataContext：延後的重排強制套用時，清單會把那一列的容器回收給別筆 run，開著的選單會跟著換成那一筆。
+            項目用選擇器套樣式（同 Style.ContextMenu.Builtin）：選單裡有分隔線，直接設 ItemContainerStyle 會被套到分隔線上而丟例外。
+        -->
+        <ContextMenu
+            x:Key="Menu.Run"
+            Closed="OnRunMenuClosed"
+            Opened="OnRunMenuOpened"
+            Style="{StaticResource Style.ContextMenu}">
+            <ContextMenu.ItemContainerStyleSelector>
+                <themes:MenuItemStyleSelector MenuItemStyle="{StaticResource Style.MenuItem}" />
+            </ContextMenu.ItemContainerStyleSelector>
+            <MenuItem Click="OnOpenRunClick" Header="{l:T MenuOpenRun}" />
+            <MenuItem
+                Click="OnOpenPullRequestClick"
+                Header="{l:T MenuOpenPullRequest}"
+                Visibility="{Binding HasPullRequest, Converter={StaticResource BoolToVisibility}}" />
+            <MenuItem Click="OnOpenCommitClick" Header="{l:T MenuOpenCommit}" />
+            <MenuItem Click="OnCopyRunUrlClick" Header="{l:T MenuCopyRunUrl}" />
+            <MenuItem
+                Click="OnCopyFailedLogClick"
+                Header="{l:T MenuCopyFailedLog}"
+                Visibility="{Binding CanCopyFailedLog, Converter={StaticResource BoolToVisibility}}" />
+            <!--  不設 IsCheckable：UIA 的 Toggle 只改勾號、不會觸發 Click；已標記與否改放在報讀名稱  -->
+            <MenuItem
+                AutomationProperties.Name="{Binding WatchMenuAutomationName}"
+                Click="OnToggleWatchClick"
+                Header="{l:T MenuWatch}"
+                IsChecked="{Binding IsWatched, Mode=OneWay}"
+                Visibility="{Binding CanWatch, Converter={StaticResource BoolToVisibility}}" />
+            <MenuItem Click="OnMuteRepoClick" Header="{l:T MenuMuteRepo}" />
+
+            <!--
+                寫入（第二階段 spec §9.1）：寫入功能開啟時才出現分隔線與這些項目，關閉時選單和第一階段相同。
+                停用的項目用 tooltip 說明原因：WPF 預設不對停用的元素顯示 tooltip，所以設 ShowOnDisabled；
+                原因同時放進報讀說明（同 repo 管理頁的強制納入按鈕）。可以用時原因是 null，不顯示空的 tooltip；
+                報讀說明不接受 null（繫結會報 Data Error 5），所以 null 時給空字串（TargetNullValue）。
+            -->
+            <Separator Visibility="{Binding ShowWriteActions, Converter={StaticResource BoolToVisibility}}" />
+            <MenuItem
+                AutomationProperties.HelpText="{Binding RerunFailedReason, TargetNullValue=''}"
+                Click="OnRerunFailedJobsClick"
+                Header="{l:T MenuRerunFailedJobs}"
+                IsEnabled="{Binding CanRerunFailed}"
+                ToolTip="{Binding RerunFailedReason}"
+                ToolTipService.ShowOnDisabled="True"
+                Visibility="{Binding ShowWriteActions, Converter={StaticResource BoolToVisibility}}" />
+            <MenuItem
+                AutomationProperties.HelpText="{Binding RerunAllReason, TargetNullValue=''}"
+                Click="OnRerunAllClick"
+                Header="{l:T MenuRerunAll}"
+                IsEnabled="{Binding CanRerunAll}"
+                ToolTip="{Binding RerunAllReason}"
+                ToolTipService.ShowOnDisabled="True"
+                Visibility="{Binding ShowWriteActions, Converter={StaticResource BoolToVisibility}}" />
+            <MenuItem
+                AutomationProperties.HelpText="{Binding CancelReason, TargetNullValue=''}"
+                Click="OnCancelRunClick"
+                Header="{l:T MenuCancelRun}"
+                IsEnabled="{Binding CanCancel}"
+                ToolTip="{Binding CancelReason}"
+                ToolTipService.ShowOnDisabled="True"
+                Visibility="{Binding ShowWriteActions, Converter={StaticResource BoolToVisibility}}" />
+            <!--  強制取消只在第二階段 spec §6.4 的條件成立時出現  -->
+            <MenuItem
+                AutomationProperties.HelpText="{Binding ForceCancelReason, TargetNullValue=''}"
+                Click="OnForceCancelClick"
+                Header="{l:T MenuForceCancel}"
+                IsEnabled="{Binding CanForceCancel}"
+                ToolTip="{Binding ForceCancelReason}"
+                ToolTipService.ShowOnDisabled="True"
+                Visibility="{Binding ShowForceCancel, Converter={StaticResource BoolToVisibility}}" />
+        </ContextMenu>
+
+        <!--
+            篩選下拉的選項：可勾選、點了不關閉，才能一次勾好幾個。
+            Header 是選項物件本身，報讀名稱另外給原文：
+            Header 是字串時，MenuItem 的報讀名稱會把它當成快速鍵文字吃掉第一個底線（pull_request 變成 pullrequest），
+            連 AutomationProperties.Name 也一樣。
+            標題範本繫結選項的 Text，不用 Style.MenuItem 的 {Binding}（ToString 只在建立時讀一次）：
+            執行中換語言時 Status 的選項文字會變，選單開過一次後項目會沿用，畫面要跟著換（TextBlock 不處理存取鍵，底線照常顯示）。
+        -->
+        <Style
+            x:Key="Style.MenuItem.FilterOption"
+            BasedOn="{StaticResource Style.MenuItem}"
+            TargetType="{x:Type MenuItem}">
+            <Setter Property="Header" Value="{Binding}" />
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock
+                            MaxWidth="{StaticResource Size.Dropdown.ItemMaxWidth}"
+                            Text="{Binding Text}"
+                            TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="AutomationProperties.Name" Value="{Binding Text}" />
+            <Setter Property="IsCheckable" Value="True" />
+            <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />
+            <Setter Property="StaysOpenOnClick" Value="True" />
+        </Style>
+
+        <!--  「自動更新」下拉的選項：單選，點了就套用並關閉  -->
+        <Style
+            x:Key="Style.MenuItem.RefreshMode"
+            BasedOn="{StaticResource Style.MenuItem}"
+            TargetType="{x:Type MenuItem}">
+            <Setter Property="Header" Value="{Binding Text}" />
+            <Setter Property="IsChecked" Value="{Binding IsSelected, Mode=OneWay}" />
+            <EventSetter Event="Click" Handler="OnRefreshModeClick" />
+        </Style>
+
+        <Style
+            x:Key="Style.ListBoxItem.Run"
+            BasedOn="{StaticResource Style.ListBoxItem.Record}"
+            TargetType="{x:Type ListBoxItem}">
+            <Setter Property="ContextMenu" Value="{StaticResource Menu.Run}" />
+            <Setter Property="AutomationProperties.Name" Value="{Binding AutomationName}" />
+            <EventSetter Event="ContextMenuOpening" Handler="OnRunItemContextMenuOpening" />
+        </Style>
+
+        <!--
+            第二行的文字段：repo · workflow #n · 觸發說明 · by 觸發者（spec §10.5、§10.6）。
+            觸發說明可點與不可點各用一個範本：不可點時就不產生 Hyperlink，報讀軟體的連結清單才不會多出沒有名稱的連結。
+            文字段之間不能有空白或換行，否則 XAML 會多插一個空格。
+            寬度不夠時截斷加「…」，整行的 tooltip 是全文（MetaTooltip）；滑到 repo、觸發說明、觸發者上時顯示它們自己的 tooltip。
+        -->
+        <DataTemplate x:Key="Template.RunMeta.TriggerLink" DataType="{x:Type vm:RunRowViewModel}">
+            <TextBlock Style="{StaticResource Style.Text.Caption}" TextTrimming="CharacterEllipsis" ToolTip="{Binding MetaTooltip}"><Hyperlink Click="OnRepoLinkClick" Style="{StaticResource Style.Hyperlink.Repo}" ToolTip="{Binding RepoFullName}"><Run Text="{Binding RepoName, Mode=OneWay}" /></Hyperlink><Run Text="{Binding WorkflowSegment, Mode=OneWay}" /><Run Text="{Binding TriggerSeparator, Mode=OneWay}" /><Hyperlink Click="OnTriggerLinkClick" Style="{StaticResource Style.Hyperlink.Inline}" ToolTip="{Binding TriggerTooltip}"><Run Text="{Binding TriggerLinkText, Mode=OneWay}" /></Hyperlink><Run Text="{Binding ActorSegment, Mode=OneWay}" ToolTip="{Binding ActorTooltip}" /></TextBlock>
+        </DataTemplate>
+
+        <DataTemplate x:Key="Template.RunMeta.TriggerText" DataType="{x:Type vm:RunRowViewModel}">
+            <TextBlock Style="{StaticResource Style.Text.Caption}" TextTrimming="CharacterEllipsis" ToolTip="{Binding MetaTooltip}"><Hyperlink Click="OnRepoLinkClick" Style="{StaticResource Style.Hyperlink.Repo}" ToolTip="{Binding RepoFullName}"><Run Text="{Binding RepoName, Mode=OneWay}" /></Hyperlink><Run Text="{Binding WorkflowSegment, Mode=OneWay}" /><Run Text="{Binding TriggerSeparator, Mode=OneWay}" /><Run Text="{Binding TriggerPlainText, Mode=OneWay}" ToolTip="{Binding TriggerTooltip}" /><Run Text="{Binding ActorSegment, Mode=OneWay}" ToolTip="{Binding ActorTooltip}" /></TextBlock>
+        </DataTemplate>
+
+        <!--  依 HasTriggerLink 換範本；換範本時整段重建，舊的 Hyperlink 不會留在畫面或報讀樹裡  -->
+        <Style x:Key="Style.ContentPresenter.RunMeta" TargetType="{x:Type ContentPresenter}">
+            <Setter Property="ContentTemplate" Value="{StaticResource Template.RunMeta.TriggerText}" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasTriggerLink}" Value="True">
+                    <Setter Property="ContentTemplate" Value="{StaticResource Template.RunMeta.TriggerLink}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!--
+            清單的一列（spec §10.5）：
+            第一行 標題（過長截斷，tooltip 全文）……開始時間
+            第二行 repo · workflow #n · 觸發說明 · by 觸發者  [第 N 次嘗試][分支][鈴鐺]……耗時／已執行與 ETA（細進度條）
+        -->
+        <DataTemplate x:Key="Template.RunRow" DataType="{x:Type vm:RunRowViewModel}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="RunTime" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <controls:StatusIcon
+                    Grid.RowSpan="2"
+                    Margin="{StaticResource Margin.Row.Icon}"
+                    VerticalAlignment="Top"
+                    State="{Binding State}" />
+
+                <TextBlock
+                    Grid.Column="1"
+                    Style="{StaticResource Style.Text.Body}"
+                    Text="{Binding Title}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTip="{Binding TitleTooltip}" />
+
+                <Grid
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="{StaticResource Margin.Row.Meta}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ContentPresenter
+                        VerticalAlignment="Center"
+                        Content="{Binding}"
+                        Style="{StaticResource Style.ContentPresenter.RunMeta}" />
+
+                    <StackPanel
+                        Grid.Column="1"
+                        Margin="{StaticResource Margin.Gap.Left}"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <Border
+                            Margin="{StaticResource Margin.Gap.Right}"
+                            Style="{StaticResource Style.Border.Badge}"
+                            Visibility="{Binding HasAttempt, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Style="{StaticResource Style.Text.Badge}" Text="{Binding AttemptText}" />
+                        </Border>
+                        <Button
+                            MaxWidth="{StaticResource Size.Chip.Branch.MaxWidth}"
+                            Margin="{StaticResource Margin.Gap.Right}"
+                            AutomationProperties.Name="{Binding BranchText}"
+                            Click="OnBranchClick"
+                            Content="{Binding BranchText}"
+                            IsEnabled="{Binding CanOpenBranch}"
+                            Style="{StaticResource Style.Button.Chip.Branch}"
+                            Visibility="{Binding ShowBranchChip, Converter={StaticResource BoolToVisibility}}" />
+                        <!--  Path 沒有 automation peer：已標記的狀態由列的報讀名稱（AutomationName）帶出  -->
+                        <Path
+                            VerticalAlignment="Center"
+                            Data="{StaticResource Geometry.Bell}"
+                            Stroke="{StaticResource Brush.Text.Secondary}"
+                            Style="{StaticResource Style.Path.Icon}"
+                            ToolTip="{l:T MainWatchedTooltip}"
+                            Visibility="{Binding IsWatched, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock
+                    Grid.Column="2"
+                    Margin="{StaticResource Margin.Row.Time}"
+                    HorizontalAlignment="Right"
+                    Style="{StaticResource Style.Text.Caption}"
+                    Text="{Binding StartText}"
+                    ToolTip="{Binding StartTooltip}"
+                    Visibility="{Binding ShowStartTime, Converter={StaticResource BoolToVisibility}}" />
+
+                <StackPanel
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    Margin="{StaticResource Margin.Row.Time}"
+                    VerticalAlignment="Center">
+                    <TextBlock
+                        HorizontalAlignment="Right"
+                        Style="{StaticResource Style.Text.Caption}"
+                        Text="{Binding DurationText}"
+                        ToolTip="{Binding DurationTooltip}" />
+                    <ProgressBar
+                        Margin="{StaticResource Margin.Gap.Top}"
+                        Style="{StaticResource Style.ProgressBar.Thin}"
+                        Tag="{Binding ProgressTone}"
+                        Visibility="{Binding ShowProgress, Converter={StaticResource BoolToVisibility}}"
+                        Value="{Binding ProgressPercent, Mode=OneWay}" />
+                </StackPanel>
+
+                <!--  按鈕只有 28x28：內距歸零，16x16 的圖示才放得下（Style.Button.Icon 的內距 6 會讓內容區只剩 14）  -->
+                <Button
+                    Grid.RowSpan="2"
+                    Grid.Column="3"
+                    Width="{StaticResource Size.Button.Chip.MinHeight}"
+                    Height="{StaticResource Size.Button.Chip.MinHeight}"
+                    Margin="{StaticResource Margin.Gap.Left}"
+                    Padding="{StaticResource Spacing.None}"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="{l:T MainMoreActions}"
+                    Click="OnMoreClick"
+                    Style="{StaticResource Style.Button.Icon}"
+                    ToolTip="{l:T MainMoreActions}">
+                    <Path Data="{StaticResource Geometry.More}" Style="{StaticResource Style.Path.Icon.Filled}" />
+                </Button>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  標題列：整條可拖曳（雙擊最大化／還原），按鈕已在樣式中設定 IsHitTestVisibleInChrome  -->
+        <Grid
+            Grid.Row="0"
+            Height="{StaticResource Size.Window.DragRegionHeight}"
+            Margin="{StaticResource Margin.TitleBar}">
+            <TextBlock
+                VerticalAlignment="Center"
+                Style="{StaticResource Style.Text.Body}"
+                Text="IsItGreenYet" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <!--  置頂與 ✕ 的報讀名稱與 tooltip 依狀態由程式設定（ApplyAlwaysOnTop、UpdateCloseButton），換語言時重設  -->
+                <Button
+                    x:Name="PinButton"
+                    Click="OnTogglePinClick"
+                    Style="{StaticResource Style.Button.Icon}">
+                    <Path Data="{StaticResource Geometry.Pin}" Style="{StaticResource Style.Path.Icon}" />
+                </Button>
+                <Button
+                    x:Name="RepoManagerButton"
+                    AutomationProperties.Name="{l:T CommonRepoManager}"
+                    Click="OnRepoManagerClick"
+                    Style="{StaticResource Style.Button.Icon}"
+                    ToolTip="{l:T CommonRepoManager}">
+                    <Path Data="{StaticResource Geometry.Repos}" Style="{StaticResource Style.Path.Icon}" />
+                </Button>
+                <Button
+                    x:Name="SettingsButton"
+                    AutomationProperties.Name="{l:T CommonSettings}"
+                    Click="OnSettingsClick"
+                    Style="{StaticResource Style.Button.Icon}"
+                    ToolTip="{l:T CommonSettings}">
+                    <Path Data="{StaticResource Geometry.Settings}" Style="{StaticResource Style.Path.Icon}" />
+                </Button>
+                <Button
+                    x:Name="CloseButton"
+                    Click="OnCloseClick"
+                    Style="{StaticResource Style.Button.Icon}">
+                    <Path Data="{StaticResource Geometry.Close}" Style="{StaticResource Style.Path.Icon}" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!--  橫幅（spec §10.2）：依嚴重度只顯示一則  -->
+        <Border
+            x:Name="Banner"
+            Grid.Row="1"
+            Margin="{StaticResource Margin.Section}"
+            Style="{StaticResource Style.Banner}"
+            Tag="{Binding BannerTone}"
+            Visibility="{Binding HasBanner, Converter={StaticResource BoolToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    x:Name="BannerText"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource Style.Text.Body}"
+                    Text="{Binding BannerText}"
+                    TextWrapping="Wrap" />
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="{StaticResource Margin.Gap.Left}"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Left}"
+                        Click="OnRecheckAuthClick"
+                        Content="{l:T CommonRecheck}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding BannerShowRecheck, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Left}"
+                        Click="OnSettingsClick"
+                        Content="{l:T CommonOpenSettings}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding BannerShowOpenSettings, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Left}"
+                        Click="OnRetryClick"
+                        Content="{l:T CommonRetryNow}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding BannerShowRetry, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Left}"
+                        Click="OnRepoManagerClick"
+                        Content="{l:T CommonOpenRepoManager}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding BannerShowOpenRepoManager, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Left}"
+                        Click="OnOpenFolderClick"
+                        Content="{l:T CommonOpenFolder}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding BannerShowOpenFolder, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+                <Button
+                    Grid.Column="2"
+                    Margin="{StaticResource Margin.Gap.Left}"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="{l:T CommonClose}"
+                    Click="OnDismissBannerClick"
+                    Style="{StaticResource Style.Button.Icon}"
+                    ToolTip="{l:T CommonClose}"
+                    Visibility="{Binding BannerCanDismiss, Converter={StaticResource BoolToVisibility}}">
+                    <Path Data="{StaticResource Geometry.Close}" Style="{StaticResource Style.Path.Icon}" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <!--
+            摘要列與「自動更新」下拉（spec §10.3）。
+            摘要一段一段排（SummaryParts，每段結尾帶分隔）：寬度不夠時整段換到下一行，不在段落中間斷開。
+            單獨一段比整列還寬時（實際上不會）才截斷；tooltip 一律是全文。
+        -->
+        <Grid Grid.Row="2" Margin="{StaticResource Margin.Section}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ItemsControl
+                x:Name="Summary"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{Binding SummaryText}"
+                Focusable="False"
+                IsTabStop="False"
+                ItemsSource="{Binding SummaryParts}"
+                ToolTip="{Binding SummaryText}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock
+                            Style="{StaticResource Style.Text.Caption}"
+                            Text="{Binding}"
+                            TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ToggleButton
+                x:Name="RefreshModeButton"
+                Grid.Column="1"
+                Margin="{StaticResource Margin.Gap.Left}"
+                Checked="OnDropdownChecked"
+                Content="{Binding RefreshModeText}"
+                Style="{StaticResource Style.ToggleButton.Filter}"
+                Unchecked="OnDropdownUnchecked">
+                <ToggleButton.ContextMenu>
+                    <ContextMenu
+                        Closed="OnDropdownClosed"
+                        DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                        ItemContainerStyle="{StaticResource Style.MenuItem.RefreshMode}"
+                        ItemsSource="{Binding RefreshModes}"
+                        Style="{StaticResource Style.ContextMenu}" />
+                </ToggleButton.ContextMenu>
+            </ToggleButton>
+        </Grid>
+
+        <!--  篩選列（spec §10.4）：6 個多選、搜尋、只看需要注意；窄的時候自動換行  -->
+        <WrapPanel
+            Grid.Row="3"
+            Margin="{StaticResource Margin.Section}"
+            Orientation="Horizontal">
+            <ItemsControl
+                x:Name="FilterFields"
+                VerticalAlignment="Center"
+                Focusable="False"
+                IsTabStop="False"
+                ItemsSource="{Binding Filter.Fields}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:FilterFieldViewModel}">
+                        <ToggleButton
+                            Margin="{StaticResource Margin.Gap.Wrap}"
+                            AutomationProperties.AutomationId="{Binding AutomationId}"
+                            Checked="OnDropdownChecked"
+                            Content="{Binding Label}"
+                            IsEnabled="{Binding HasOptions}"
+                            Style="{StaticResource Style.ToggleButton.Filter}"
+                            Tag="{Binding TagValue}"
+                            Unchecked="OnDropdownUnchecked">
+                            <ToggleButton.ContextMenu>
+                                <ContextMenu
+                                    Closed="OnDropdownClosed"
+                                    DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                    ItemContainerStyle="{StaticResource Style.MenuItem.FilterOption}"
+                                    ItemsSource="{Binding Options}"
+                                    Style="{StaticResource Style.ContextMenu}" />
+                            </ToggleButton.ContextMenu>
+                        </ToggleButton>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Grid Margin="{StaticResource Margin.Gap.Wrap}" VerticalAlignment="Center">
+                <TextBox
+                    x:Name="SearchBox"
+                    Width="{StaticResource Size.Search.Width}"
+                    Height="{StaticResource Size.Button.Chip.MinHeight}"
+                    Padding="{StaticResource Padding.Search}"
+                    AutomationProperties.Name="{l:T CommonSearch}"
+                    Style="{StaticResource Style.TextBox}"
+                    Text="{Binding Filter.SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock
+                    Margin="{StaticResource Margin.Search.Placeholder}"
+                    Style="{StaticResource Style.Text.Placeholder}"
+                    Text="{l:T CommonSearchPlaceholder}"
+                    Visibility="{Binding Filter.IsSearchEmpty, Converter={StaticResource BoolToVisibility}}" />
+            </Grid>
+
+            <CheckBox
+                x:Name="AttentionOnlyBox"
+                Margin="{StaticResource Margin.Gap.Wrap}"
+                VerticalAlignment="Center"
+                Content="{l:T MainAttentionOnly}"
+                IsChecked="{Binding Filter.AttentionOnly}"
+                Style="{StaticResource Style.CheckBox}" />
+
+            <Button
+                x:Name="ClearFiltersButton"
+                Margin="{StaticResource Margin.Gap.Wrap}"
+                VerticalAlignment="Center"
+                Click="OnClearFiltersClick"
+                Content="{l:T CommonClearFilters}"
+                Style="{StaticResource Style.Button.Chip}"
+                Visibility="{Binding Filter.HasActiveFilter, Converter={StaticResource BoolToVisibility}}" />
+        </WrapPanel>
+
+        <!--  run 清單（spec §10.10）與空狀態（spec §10.11）  -->
+        <Grid Grid.Row="4" Margin="{StaticResource Margin.Section.Last}">
+            <ListBox
+                x:Name="RunList"
+                Grid.IsSharedSizeScope="True"
+                AutomationProperties.Name="{l:T MainRunList}"
+                ItemContainerStyle="{StaticResource Style.ListBoxItem.Run}"
+                ItemTemplate="{StaticResource Template.RunRow}"
+                ItemsSource="{Binding Rows}"
+                KeyDown="OnRunListKeyDown"
+                Loaded="OnRunListLoaded"
+                MouseLeave="OnRunListMouseLeave"
+                PreviewMouseMove="OnRunListPreviewMouseMove"
+                SelectionMode="Single"
+                SizeChanged="OnRunListSizeChanged"
+                Style="{StaticResource Style.ListBox.Records}"
+                VirtualizingPanel.IsVirtualizing="True"
+                VirtualizingPanel.ScrollUnit="Pixel"
+                VirtualizingPanel.VirtualizationMode="Recycling">
+                <ListBox.Resources>
+                    <!--  同 SAM：用主題的細捲軸，不要 Windows 預設的粗捲軸  -->
+                    <Style BasedOn="{StaticResource Style.ScrollBar.Thin}" TargetType="{x:Type ScrollBar}" />
+                </ListBox.Resources>
+            </ListBox>
+
+            <StackPanel
+                x:Name="EmptyState"
+                MaxWidth="{StaticResource Size.EmptyState.MaxWidth}"
+                Margin="{StaticResource Margin.EmptyState}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Visibility="{Binding HasEmptyState, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock
+                    x:Name="EmptyTitle"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource Style.Text.Title}"
+                    Text="{Binding EmptyTitle}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    x:Name="EmptyDetail"
+                    Margin="{StaticResource Margin.Gap.Top}"
+                    HorizontalAlignment="Center"
+                    Style="{StaticResource Style.Text.Caption}"
+                    Text="{Binding EmptyDetail}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap"
+                    Visibility="{Binding HasEmptyDetail, Converter={StaticResource BoolToVisibility}}" />
+                <WrapPanel Margin="{StaticResource Margin.Gap.Top}" HorizontalAlignment="Center">
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Wrap}"
+                        Click="OnRecheckAuthClick"
+                        Content="{l:T CommonRecheck}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding EmptyShowRecheck, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Wrap}"
+                        Click="OnSettingsClick"
+                        Content="{l:T CommonOpenSettings}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding EmptyShowOpenSettings, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Wrap}"
+                        Click="OnRetryClick"
+                        Content="{l:T CommonRetryNow}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding EmptyShowRetry, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Wrap}"
+                        Click="OnRepoManagerClick"
+                        Content="{l:T CommonOpenRepoManager}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding EmptyShowOpenRepoManager, Converter={StaticResource BoolToVisibility}}" />
+                    <Button
+                        Margin="{StaticResource Margin.Gap.Wrap}"
+                        Click="OnClearFiltersClick"
+                        Content="{l:T CommonClearFilters}"
+                        Style="{StaticResource Style.Button.Secondary}"
+                        Visibility="{Binding EmptyShowClearFilters, Converter={StaticResource BoolToVisibility}}" />
+                </WrapPanel>
+            </StackPanel>
+        </Grid>
+
+        <!--  訊息條（同 SAM）：疊在最上層，不影響版面高度  -->
+        <Border
+            x:Name="Snackbar"
+            Grid.Row="0"
+            Grid.RowSpan="5"
+            Margin="{StaticResource Margin.Section.Last}"
+            Style="{StaticResource Style.Border.Snackbar}"
+            Visibility="Collapsed">
+            <TextBlock
+                x:Name="SnackbarText"
+                Style="{StaticResource Style.Text.Caption}"
+                TextWrapping="Wrap" />
+        </Border>
+    </Grid>
+</Window>

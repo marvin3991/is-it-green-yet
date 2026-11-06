@@ -1,0 +1,1400 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:core="clr-namespace:IsItGreenYet.Core;assembly=IsItGreenYet.Core"
+    xmlns:interop="clr-namespace:IsItGreenYet.App.Interop"
+    xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+    xmlns:themes="clr-namespace:IsItGreenYet.App.Themes">
+
+    <!--
+        補充樣式：Design.xaml 沒有涵蓋到的對話框控制項。
+        色彩與圓角一律沿用 Design.xaml 的 token，不另外定義顏色。
+    -->
+
+    <Style x:Key="Style.Window.Dialog" TargetType="{x:Type Window}" BasedOn="{StaticResource Style.Window.Main}">
+        <Setter Property="MaxWidth" Value="Infinity" />
+        <Setter Property="MaxHeight" Value="Infinity" />
+        <Setter Property="Width" Value="480" />
+        <Setter Property="Height" Value="560" />
+        <!--
+            WindowStartupLocation 是一般 CLR 屬性而不是相依屬性，
+            寫在 Setter 裡會在載入 XAML 時丟例外，必須由各視窗自己設定。
+        -->
+    </Style>
+
+    <Style x:Key="Style.TextBox" TargetType="{x:Type TextBox}">
+        <Setter Property="Background" Value="{StaticResource Brush.Window.Background}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        <Setter Property="CaretBrush" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="SelectionBrush" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TextBox}">
+                    <Border
+                        x:Name="Chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{StaticResource Radius.Button}"
+                        SnapsToDevicePixels="True">
+                        <ScrollViewer
+                            x:Name="PART_ContentHost"
+                            Margin="{TemplateBinding Padding}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="Hidden"
+                            VerticalScrollBarVisibility="Hidden" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Brush.Surface}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="{StaticResource Thickness.Border.Focus}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Style.CheckBox" TargetType="{x:Type CheckBox}">
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type CheckBox}">
+                    <StackPanel Background="Transparent" Orientation="Horizontal">
+                        <Border
+                            x:Name="Box"
+                            Width="20"
+                            Height="20"
+                            VerticalAlignment="Center"
+                            Background="{StaticResource Brush.Window.Background}"
+                            BorderBrush="{StaticResource Brush.Border}"
+                            BorderThickness="{StaticResource Thickness.Border.Standard}"
+                            CornerRadius="6"
+                            SnapsToDevicePixels="True">
+                            <!--
+                                勾的座標是外框裡面（扣掉 1 的框線）的 18x18：筆畫 2、圓頭後墨水佔 x 2.5～15.5、y 3.5～14.5，
+                                在 20x20 的框裡左右各剩 3.5、上下各剩 4.5，正好置中（原本整個偏右下 0.5）。
+                            -->
+                            <Path
+                                x:Name="Check"
+                                Data="M 3.5,9.5 L 7.5,13.5 L 14.5,4.5"
+                                Stretch="None"
+                                Stroke="{StaticResource Brush.Accent.Foreground}"
+                                StrokeEndLineCap="Round"
+                                StrokeLineJoin="Round"
+                                StrokeStartLineCap="Round"
+                                StrokeThickness="2"
+                                Visibility="Collapsed" />
+                        </Border>
+                        <ContentPresenter
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            RecognizesAccessKey="True" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Brush.Accent.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Brush.Text.Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  主畫面的記錄列：比主題預設再緊一點，卡片才塞得下 5 筆；整列可點擊以開啟編輯  -->
+    <Style
+        x:Key="Style.ListBoxItem.Record.Compact"
+        TargetType="{x:Type ListBoxItem}"
+        BasedOn="{StaticResource Style.ListBoxItem.Record}">
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Cursor" Value="Hand" />
+    </Style>
+
+    <!--
+        破壞性動作用的按鈕。Design.xaml 的 Secondary 樣式在 hover 時會把前景色蓋成
+        Text.Primary，衍生樣式改不掉，所以這裡重寫整個 Template。
+        Danger 的深淺兩階是從 Brush.Danger (#FF7B79) 手調出來的。
+    -->
+    <SolidColorBrush x:Key="Brush.Danger.Hover" Color="#FF9694" />
+    <SolidColorBrush x:Key="Brush.Danger.Pressed" Color="#E56260" />
+
+    <!--  第一步：只是「想刪」，用文字色提示，不做成顯眼的紅色實心塊  -->
+    <Style x:Key="Style.Button.Danger.Subtle" TargetType="{x:Type Button}">
+        <Setter Property="MinHeight" Value="{StaticResource Size.Button.Secondary.MinHeight}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.Button.Secondary}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Transparent}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Danger}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="FontWeight" Value="{StaticResource FontWeight.Emphasis}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border
+                        x:Name="Chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{StaticResource Radius.Button}"
+                        SnapsToDevicePixels="True">
+                        <ContentPresenter
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Danger}" />
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Danger.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Brush.Window.Background}" />
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Danger.Pressed}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Danger}" />
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="{StaticResource Thickness.Border.Focus}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Muted}" />
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  第二步：真的要刪，做成實心紅底，讓使用者知道按下去就回不去了  -->
+    <Style x:Key="Style.Button.Danger" TargetType="{x:Type Button}" BasedOn="{StaticResource Style.Button.Danger.Subtle}">
+        <Setter Property="Background" Value="{StaticResource Brush.Danger}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Danger}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Accent.Foreground}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border
+                        x:Name="Chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{StaticResource Radius.Button}"
+                        SnapsToDevicePixels="True">
+                        <ContentPresenter
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Brush.Danger.Hover}" />
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Danger.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Brush.Danger.Pressed}" />
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Danger.Pressed}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Text.Primary}" />
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="{StaticResource Thickness.Border.Focus}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  統計圖的長條  -->
+    <Style x:Key="Style.Bar" TargetType="{x:Type Rectangle}">
+        <Setter Property="Fill" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="RadiusX" Value="2" />
+        <Setter Property="RadiusY" Value="2" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Count}" Value="0">
+                <Setter Property="Fill" Value="{StaticResource Brush.Surface.Hover}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        ══════════════════════════════════════════════════════════════════
+        以下是 IsItGreenYet 新增的樣式（spec §16.1）。
+        只引用 Design.xaml 既有的色彩 token，不新增任何顏色；新增的只有尺寸與圓角。
+        Tag 的合約同 Style.Button.Chip：用字串值切換外觀，不需要自訂附加屬性。
+        ══════════════════════════════════════════════════════════════════
+    -->
+
+    <!--  最大化時去掉圓角（spec §10.1）  -->
+    <CornerRadius x:Key="Radius.None">0</CornerRadius>
+
+    <!--  可縮放視窗的縮放邊框，對照 Core 的 Tuning.ResizeBorder（spec 附錄 B：6 DIP）  -->
+    <Thickness x:Key="Thickness.ResizeBorder">6</Thickness>
+
+    <!--  線條圖示的筆畫粗細：同 SAM 標題列圖示的 1.6  -->
+    <sys:Double x:Key="Size.Icon.StrokeThickness">1.6</sys:Double>
+
+    <!--
+        線條圖示（標題列、橫幅與對話框的 ✕、⋯、鈴鐺）：16x16 座標系，幾何以 (8,8) 為中心。
+        Path 用 Stretch="None" 時，版面大小只算到幾何的右下邊界（左上的留白不算），放進按鈕置中後整個圖示偏右下，最多偏 4 px
+        （2026-10-26 量測：100% 縮放下標題列 ✕ 的左右、上下邊距差 4 px）。固定成 16x16，圖示才會在按鈕的框裡上下左右置中。
+        描邊色跟著按鈕的前景色（hover、置頂中的強調色都會跟著變）；不在按鈕裡的圖示在使用端自己設 Stroke。
+    -->
+    <sys:Double x:Key="Size.Icon">16</sys:Double>
+
+    <Style x:Key="Style.Path.Icon" TargetType="{x:Type Path}">
+        <Setter Property="Width" Value="{StaticResource Size.Icon}" />
+        <Setter Property="Height" Value="{StaticResource Size.Icon}" />
+        <Setter Property="Stretch" Value="None" />
+        <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+        <Setter Property="StrokeThickness" Value="{StaticResource Size.Icon.StrokeThickness}" />
+        <Setter Property="StrokeStartLineCap" Value="Round" />
+        <Setter Property="StrokeEndLineCap" Value="Round" />
+        <Setter Property="StrokeLineJoin" Value="Round" />
+    </Style>
+
+    <!--  實心的圖示（⋯ 的三個點）：只填色、不描邊，描邊會讓點變大  -->
+    <Style x:Key="Style.Path.Icon.Filled" TargetType="{x:Type Path}" BasedOn="{StaticResource Style.Path.Icon}">
+        <Setter Property="Stroke" Value="{x:Null}" />
+        <Setter Property="Fill" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+    </Style>
+
+    <!--  狀態圖示：16x16 座標系，同 SAM 的 Geometry.* 線條圖示；筆畫同 SAM 核取方塊打勾的 2  -->
+    <sys:Double x:Key="Size.StatusIcon">16</sys:Double>
+    <sys:Double x:Key="Size.StatusIcon.StrokeThickness">2</sys:Double>
+
+    <!--  細進度條的高度（設計選擇；比 Size.ScrollBar.Thin 再細一點，避免搶過文字）  -->
+    <sys:Double x:Key="Size.ProgressBar.Thin">4</sys:Double>
+
+    <!--  篩選下拉按鈕裡文字與向下箭頭的間距（設計選擇，同 Spacing.Small 的 6）  -->
+    <Thickness x:Key="Margin.Chevron">6,0,0,0</Thickness>
+
+    <!--  篩選下拉的向下箭頭，以線段描邊繪製  -->
+    <StreamGeometry x:Key="Geometry.Chevron.Down">M 1,1 L 5,5 L 9,1</StreamGeometry>
+
+    <!--
+        箭頭的版面大小：幾何 x 1～9、y 1～5，加上筆畫 1.6 的圓頭後墨水佔 0.2～9.8、0.2～5.8，
+        固定成 10x6 時墨水正好在中間（理由同 Size.Icon：Stretch="None" 的版面只算到右下邊界）。
+    -->
+    <sys:Double x:Key="Size.Chevron.Width">10</sys:Double>
+    <sys:Double x:Key="Size.Chevron.Height">6</sys:Double>
+
+    <!--
+        可縮放的主視窗（spec §10.1）。以 Style.Window.Main 為基礎，開放 MaxWidth/MaxHeight、
+        ResizeMode=CanResize、WindowChrome 的 ResizeBorderThickness；尺寸取自 Core 的 Tuning。
+        最大化時去掉圓角；限制在工作區內（WM_GETMINMAXINFO）由主視窗自己處理。
+        WindowStartupLocation 不是相依屬性，不能寫在 Setter 裡（見 Style.Window.Dialog）。
+    -->
+    <Style x:Key="Style.Window.Resizable" TargetType="{x:Type Window}" BasedOn="{StaticResource Style.Window.Main}">
+        <Setter Property="Width" Value="{x:Static core:Tuning.WindowDefaultWidth}" />
+        <Setter Property="Height" Value="{x:Static core:Tuning.WindowDefaultHeight}" />
+        <Setter Property="MinWidth" Value="{x:Static core:Tuning.WindowMinWidth}" />
+        <Setter Property="MinHeight" Value="{x:Static core:Tuning.WindowMinHeight}" />
+        <Setter Property="MaxWidth" Value="Infinity" />
+        <Setter Property="MaxHeight" Value="Infinity" />
+        <Setter Property="ResizeMode" Value="CanResize" />
+        <Setter Property="shell:WindowChrome.WindowChrome">
+            <Setter.Value>
+                <shell:WindowChrome
+                    CaptionHeight="{StaticResource Size.Window.DragRegionHeight}"
+                    CornerRadius="{StaticResource Radius.Card}"
+                    GlassFrameThickness="{StaticResource Spacing.None}"
+                    ResizeBorderThickness="{StaticResource Thickness.ResizeBorder}"
+                    UseAeroCaptionButtons="False" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Window}">
+                    <Border
+                        x:Name="WindowFrame"
+                        Background="{StaticResource Brush.Window.Background}"
+                        BorderBrush="{StaticResource Brush.Border}"
+                        BorderThickness="{StaticResource Thickness.Border.Standard}"
+                        CornerRadius="{StaticResource Radius.Card}"
+                        SnapsToDevicePixels="True">
+                        <Grid>
+                            <Border
+                                x:Name="DragRegionBackground"
+                                Height="{StaticResource Size.Window.DragRegionHeight}"
+                                VerticalAlignment="Top"
+                                Background="{StaticResource Brush.Surface}"
+                                CornerRadius="{StaticResource Radius.Window.Top}"
+                                IsHitTestVisible="False" />
+                            <AdornerDecorator>
+                                <ContentPresenter
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    ContentStringFormat="{TemplateBinding ContentStringFormat}" />
+                            </AdornerDecorator>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsActive" Value="False">
+                            <Setter TargetName="WindowFrame" Property="BorderBrush" Value="{StaticResource Brush.Surface.Hover}" />
+                        </Trigger>
+                        <Trigger Property="WindowState" Value="Maximized">
+                            <Setter TargetName="WindowFrame" Property="CornerRadius" Value="{StaticResource Radius.None}" />
+                            <Setter TargetName="WindowFrame" Property="BorderThickness" Value="{StaticResource Spacing.None}" />
+                            <Setter TargetName="DragRegionBackground" Property="CornerRadius" Value="{StaticResource Radius.None}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  可縮放的對話框（repo 管理頁、設定頁、授權與第三方聲明，spec §11）：尺寸取自 Core 的 Tuning  -->
+    <Style x:Key="Style.Window.Dialog.Resizable" TargetType="{x:Type Window}" BasedOn="{StaticResource Style.Window.Resizable}">
+        <Setter Property="Width" Value="{x:Static core:Tuning.DialogDefaultWidth}" />
+        <Setter Property="Height" Value="{x:Static core:Tuning.DialogDefaultHeight}" />
+        <Setter Property="MinWidth" Value="{x:Static core:Tuning.DialogMinWidth}" />
+        <Setter Property="MinHeight" Value="{x:Static core:Tuning.DialogMinHeight}" />
+    </Style>
+
+    <!--
+        狀態圖示（清單列，spec §10.5、§16.2）。形狀由使用端的 Data 決定，這裡只管筆畫與顏色。
+        Tag（字串）：Success = 成功（Accent）、Failure = 失敗（Danger）、
+        Warning = 進行中／排隊／等待核准／超過預估（Warning）；
+        其他值或未設定 = 取消、略過、完成後未知、無資料（Text.Muted）。
+        實心的形狀可以在使用端把 Fill 綁到 Stroke。
+    -->
+    <Style x:Key="Style.Path.StatusIcon" TargetType="{x:Type Path}">
+        <Setter Property="Width" Value="{StaticResource Size.StatusIcon}" />
+        <Setter Property="Height" Value="{StaticResource Size.StatusIcon}" />
+        <Setter Property="Stretch" Value="None" />
+        <Setter Property="Stroke" Value="{StaticResource Brush.Text.Muted}" />
+        <Setter Property="StrokeThickness" Value="{StaticResource Size.StatusIcon.StrokeThickness}" />
+        <Setter Property="StrokeStartLineCap" Value="Round" />
+        <Setter Property="StrokeEndLineCap" Value="Round" />
+        <Setter Property="StrokeLineJoin" Value="Round" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Style.Triggers>
+            <Trigger Property="Tag" Value="Success">
+                <Setter Property="Stroke" Value="{StaticResource Brush.Accent}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Failure">
+                <Setter Property="Stroke" Value="{StaticResource Brush.Danger}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Warning">
+                <Setter Property="Stroke" Value="{StaticResource Brush.Warning}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        分支 chip（spec §10.5，點了開分支頁）。以 Style.Button.Chip 為基礎：
+        分支名可能很長，內容用可截斷的文字顯示，全名放在 ToolTip；
+        用 TextBlock 顯示也避免分支名裡的底線被當成快速鍵吃掉。
+    -->
+    <Style x:Key="Style.Button.Chip.Branch" TargetType="{x:Type Button}" BasedOn="{StaticResource Style.Button.Chip}">
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="ToolTip" Value="{Binding Content, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        細進度條（spec §8.2：已執行時間 ÷ 中位數）。平常用沒有狀態含意的 Text.Secondary；
+        Tag="Overrun"（超過預估，滿格）時改用 Warning（spec §8.2、§16.2）。
+        軌道與指示都是膠囊：原本的圓角 3（Radius.ScrollBar）大於高 4 的一半，兩端被 WPF 縮成橢圓角。
+    -->
+    <Style x:Key="Style.ProgressBar.Thin" TargetType="{x:Type ProgressBar}">
+        <Setter Property="Height" Value="{StaticResource Size.ProgressBar.Thin}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Surface.Hover}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Spacing.None}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ProgressBar}">
+                    <Grid>
+                        <Border
+                            x:Name="PART_Track"
+                            Background="{TemplateBinding Background}"
+                            Style="{StaticResource Style.Border.Capsule}" />
+                        <Border
+                            x:Name="PART_Indicator"
+                            HorizontalAlignment="Left"
+                            Background="{TemplateBinding Foreground}"
+                            Style="{StaticResource Style.Border.Capsule}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Tag" Value="Overrun">
+                <Setter Property="Foreground" Value="{StaticResource Brush.Warning}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        橫幅（spec §10.2，標題列下方，一次只顯示最重要的一則）。
+        Tag="Warning" 框線用 Warning、Tag="Danger" 用 Danger，其他用一般框線色；哪一種橫幅用哪個 Tag 由主畫面決定。
+        文字用 Style.Text.Body，動作按鈕用 Style.Button.Secondary，✕ 用 Style.Button.Icon。
+    -->
+    <Style x:Key="Style.Banner" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Button}" />
+        <Setter Property="Padding" Value="{StaticResource Spacing.Medium}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="Tag" Value="Warning">
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.Warning}" />
+            </Trigger>
+            <Trigger Property="Tag" Value="Danger">
+                <Setter Property="BorderBrush" Value="{StaticResource Brush.Danger}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        篩選下拉的按鈕（spec §10.4）：外觀同 Style.Button.Chip，後面加向下箭頭，按下去由使用端展開 Popup。
+        IsChecked = 下拉展開中（外框用 Accent）；Tag="Selected" = 這個欄位有勾選任何值（同 Chip 的選取外觀）。
+    -->
+    <Style x:Key="Style.ToggleButton.Filter" TargetType="{x:Type ToggleButton}">
+        <Setter Property="MinHeight" Value="{StaticResource Size.Button.Chip.MinHeight}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.Button.Chip}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="FontWeight" Value="{StaticResource FontWeight.Emphasis}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border
+                        x:Name="ChipChrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        SnapsToDevicePixels="True"
+                        Style="{StaticResource Style.Border.Capsule}">
+                        <Grid>
+                            <!--  鍵盤焦點用虛線內框，理由同 Style.Button.Chip  -->
+                            <Rectangle
+                                x:Name="FocusRing"
+                                Margin="2"
+                                IsHitTestVisible="False"
+                                Stroke="{StaticResource Brush.Text.Primary}"
+                                StrokeDashArray="2 2"
+                                StrokeThickness="1"
+                                Style="{StaticResource Style.Rectangle.Capsule}"
+                                Visibility="Collapsed" />
+                            <StackPanel
+                                Margin="{TemplateBinding Padding}"
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                Orientation="Horizontal">
+                                <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="False" />
+                                <Path
+                                    Width="{StaticResource Size.Chevron.Width}"
+                                    Height="{StaticResource Size.Chevron.Height}"
+                                    Margin="{StaticResource Margin.Chevron}"
+                                    VerticalAlignment="Center"
+                                    Data="{StaticResource Geometry.Chevron.Down}"
+                                    Stretch="None"
+                                    Stroke="{TemplateBinding Foreground}"
+                                    StrokeEndLineCap="Round"
+                                    StrokeLineJoin="Round"
+                                    StrokeStartLineCap="Round"
+                                    StrokeThickness="{StaticResource Size.Icon.StrokeThickness}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ChipChrome" Property="Background" Value="{StaticResource Brush.Surface.Hover}" />
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="ChipChrome" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="Tag" Value="Selected">
+                            <Setter TargetName="ChipChrome" Property="Background" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="ChipChrome" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Accent.Foreground}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Tag" Value="Selected" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="ChipChrome" Property="Background" Value="{StaticResource Brush.Accent.Hover}" />
+                            <Setter TargetName="ChipChrome" Property="BorderBrush" Value="{StaticResource Brush.Accent.Hover}" />
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Accent.Foreground}" />
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Tag" Value="Selected" />
+                                <Condition Property="IsChecked" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="ChipChrome" Property="BorderBrush" Value="{StaticResource Brush.Accent.Pressed}" />
+                        </MultiTrigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="FocusRing" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Tag" Value="Selected" />
+                                <Condition Property="IsKeyboardFocused" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="FocusRing" Property="Stroke" Value="{StaticResource Brush.Accent.Foreground}" />
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Muted}" />
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  篩選下拉展開後的面板（Popup 的子元素）  -->
+    <Style x:Key="Style.Border.Dropdown" TargetType="{x:Type Border}">
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Button}" />
+        <Setter Property="Padding" Value="{StaticResource Spacing.Small}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!--
+        「第 N 次嘗試」小標（spec §10.5）：不可點。和分支 chip 放在同一行，尺寸跟 chip 一致，
+        沒有底色以區分「可點」與「只是標示」。
+    -->
+    <Style x:Key="Style.Border.Badge" TargetType="{x:Type Border}" BasedOn="{StaticResource Style.Border.Capsule}">
+        <Setter Property="MinHeight" Value="{StaticResource Size.Button.Chip.MinHeight}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.Button.Chip}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Transparent}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="Style.Text.Badge" TargetType="{x:Type TextBlock}">
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="FontWeight" Value="{StaticResource FontWeight.Emphasis}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!--
+        ══════════════════════════════════════════════════════════════════
+        主畫面（spec §10）新增的資源。同上：只引用既有的色彩 token。
+        間距一律由 Spacing.Small（6）、Spacing.Medium（12）、Spacing.Large（20）組合而成。
+        ══════════════════════════════════════════════════════════════════
+    -->
+
+    <!--
+        標題列「repo 管理」的線條圖示（spec §10.1）：16x16 座標系，同 SAM 的 Geometry.* 寫法，畫成一本書（repo）。
+        上緣在 y=2、下緣在 y=14，以 (8,8) 為中心（Size.Icon）；原本上緣在 2.5，整本書偏下 0.25。
+    -->
+    <StreamGeometry x:Key="Geometry.Repos">M 3.5,12.5 V 3.5 A 1.5,1.5 0 0 1 5,2 H 12.5 V 11 H 5 A 1.5,1.5 0 0 0 3.5,12.5 A 1.5,1.5 0 0 0 5,14 H 12.5 M 6.5,5.5 H 9.5</StreamGeometry>
+
+    <!--  「這筆完成時通知我」的小鈴鐺（spec §10.9），16x16 座標系：上緣（圓弧頂）y=3、下緣 y=13，以 (8,8) 為中心（原本整個偏下 0.5）  -->
+    <StreamGeometry x:Key="Geometry.Bell">M 4,10.5 V 7 A 4,4 0 0 1 12,7 V 10.5 Z M 2.5,10.5 H 13.5 M 6.8,13 H 9.2</StreamGeometry>
+
+    <!--  選單項目勾選記號，12x12 座標系  -->
+    <StreamGeometry x:Key="Geometry.MenuCheck">M 1.5,6.5 L 4.5,9.5 L 10.5,2.5</StreamGeometry>
+
+    <!--  清單列的 ⋯ 按鈕（spec §10.9）：16x16 座標系的三個實心點，用 Fill 畫  -->
+    <StreamGeometry x:Key="Geometry.More">M 2.5,8 A 1.4,1.4 0 1 1 5.3,8 A 1.4,1.4 0 1 1 2.5,8 Z M 6.6,8 A 1.4,1.4 0 1 1 9.4,8 A 1.4,1.4 0 1 1 6.6,8 Z M 10.7,8 A 1.4,1.4 0 1 1 13.5,8 A 1.4,1.4 0 1 1 10.7,8 Z</StreamGeometry>
+
+    <!--  主畫面各區塊的外距  -->
+    <Thickness x:Key="Margin.Section">12,0,12,6</Thickness>
+    <Thickness x:Key="Margin.Section.Last">12,0,12,12</Thickness>
+    <Thickness x:Key="Margin.TitleBar">16,0,6,0</Thickness>
+    <Thickness x:Key="Margin.Gap.Right">0,0,6,0</Thickness>
+    <Thickness x:Key="Margin.Gap.Left">6,0,0,0</Thickness>
+    <Thickness x:Key="Margin.Gap.Top">0,6,0,0</Thickness>
+    <Thickness x:Key="Margin.Gap.Wrap">0,0,6,6</Thickness>
+    <Thickness x:Key="Margin.Row.Icon">0,2,12,0</Thickness>
+    <Thickness x:Key="Margin.Row.Time">12,0,0,0</Thickness>
+    <Thickness x:Key="Margin.Row.Meta">0,2,0,0</Thickness>
+    <Thickness x:Key="Margin.EmptyState">20</Thickness>
+
+    <!--  搜尋框寬度、下拉選單最大高度與選項文字最大寬度（設計選擇）  -->
+    <sys:Double x:Key="Size.Search.Width">200</sys:Double>
+    <sys:Double x:Key="Size.Dropdown.MaxHeight">360</sys:Double>
+    <sys:Double x:Key="Size.Dropdown.ItemMaxWidth">320</sys:Double>
+    <sys:Double x:Key="Size.EmptyState.MaxWidth">420</sys:Double>
+    <sys:Double x:Key="Size.Chip.Branch.MaxWidth">220</sys:Double>
+
+    <!--
+        repo 管理頁一列的名稱欄（第 0 欄）比這個寬度窄時切成窄版：類別、狀態與兩個按鈕換到名稱下方（RepoManagerWindow.CompactRows）。
+        設計選擇：Body 字級的 Consolas 20 個字（一個字 8 DIP，2026-10-26 測試殼量 octo-org/sample-app 19 個字是 152），
+        一般的 owner/repo 名稱放得下。英文的類別與按鈕比中文寬，原本在最小寬度 480 時名稱欄只剩 16（審查回報量的）。
+    -->
+    <sys:Double x:Key="Size.RepoRow.NameMinWidth">160</sys:Double>
+
+    <!--  窄版的類別、狀態與按鈕：和上面一行隔 6（同 Margin.Gap.Top），彼此隔 6（同 Margin.Gap.Left）  -->
+    <Thickness x:Key="Margin.RepoRow.Compact">6,6,0,0</Thickness>
+
+    <!--  搜尋框：高度同 chip（Size.Button.Chip.MinHeight），上下內距收掉才放得下一行字；左右同 Style.TextBox 的 10  -->
+    <Thickness x:Key="Padding.Search">10,0</Thickness>
+
+    <!--  搜尋框提示字的位置：對齊 Style.TextBox 的內距 10 加外框 1，再加文字框本身的內縮 2  -->
+    <Thickness x:Key="Margin.Search.Placeholder">13,0,0,0</Thickness>
+
+    <!--
+        選單項目：勾選欄寬與內距（設計選擇）。選單裡沒有任何項目會顯示勾時，勾選欄收掉（Themes/MenuItemsPanel.cs），
+        文字離選單外緣是外框 1＋Padding.Menu 4＋項目框線 1＋內距 10＝16（同 Windows 11 的選單）。
+    -->
+    <sys:Double x:Key="Size.MenuItem.CheckColumn">22</sys:Double>
+    <Thickness x:Key="Padding.MenuItem">10,7,14,7</Thickness>
+
+    <!--  選單項目右邊的快速鍵文字（例如 Ctrl+C）和標題的距離：Spacing.Large 的 20（設計選擇）  -->
+    <Thickness x:Key="Margin.MenuItem.Gesture">20,0,0,0</Thickness>
+
+    <!--  選單的分隔線（捲軸的內建選單有）：1 px 線，上下和項目各隔 4（同 Padding.Menu）  -->
+    <Thickness x:Key="Margin.Menu.Separator">0,4</Thickness>
+
+    <!--
+        彈出層（選單、滑鼠停留提示、提示視窗、錯誤對話框、系統匣選單）的 Windows 11 外觀：
+        外框一律方角加 1 px 框線，圓角、原生陰影與框線色交給 DWM（Interop/DwmFrame.cs：選單、提示視窗、對話框用 Round，約 8 px；
+        滑鼠停留提示用 RoundSmall，約 4 px）。WPF 自己不畫外框圓角，理由見 DwmFrame 的說明。
+        彈出層裡的控制項圓角用 Radius.Control（Windows 11 控制項的 4）；主畫面的 Radius.Button、Radius.Card 與膠囊不變。
+    -->
+    <CornerRadius x:Key="Radius.Control">4</CornerRadius>
+
+    <!--  選單外框與項目之間的距離（上下左右都是 4，同 Windows 11 選單），系統匣選單（WinForms）也取這個值  -->
+    <Thickness x:Key="Padding.Menu">4</Thickness>
+
+    <!--  只有上緣 1 的分隔線：選單的分隔線、錯誤對話框按鈕列的上緣  -->
+    <Thickness x:Key="Thickness.Border.Top">0,1,0,0</Thickness>
+
+    <!--  滑鼠停留提示的內距（設計選擇）  -->
+    <Thickness x:Key="Padding.ToolTip">8,5</Thickness>
+
+    <!--  訊息條內距（同 SAM 主視窗訊息條的 14,10）  -->
+    <Thickness x:Key="Padding.Snackbar">14,10</Thickness>
+
+    <!--
+        清單列第二行的 repo 名稱（spec §10.5：粗體、強調色文字，點了開 Actions 頁）。
+        平常不畫底線，滑過時才畫，避免整排都是底線。
+        粗體用 FontWeight.Emphasis（原本是 Bold）：英文、數字是 Consolas Bold，中文是微軟正黑體 Bold，都不是假粗體（見 Design.xaml）。
+    -->
+    <Style x:Key="Style.Hyperlink.Repo" TargetType="{x:Type Hyperlink}">
+        <Setter Property="Foreground" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="FontWeight" Value="{StaticResource FontWeight.Emphasis}" />
+        <Setter Property="TextDecorations" Value="{x:Null}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource Brush.Accent.Hover}" />
+                <Setter Property="TextDecorations" Value="Underline" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  清單列第二行可點的觸發說明（PR 編號、commit）：沿用周圍文字色，滑過時畫底線並改成主要文字色  -->
+    <Style x:Key="Style.Hyperlink.Inline" TargetType="{x:Type Hyperlink}">
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+        <Setter Property="TextDecorations" Value="{x:Null}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+                <Setter Property="TextDecorations" Value="Underline" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--  搜尋框沒有文字時的提示字  -->
+    <Style x:Key="Style.Text.Placeholder" TargetType="{x:Type TextBlock}" BasedOn="{StaticResource Style.Text.Body}">
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Muted}" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!--
+        滑鼠停留的提示文字（ToolTip）：所有 ToolTip（包括 ToolTipService 自動建立的）都套這個隱含樣式。
+        系統預設是淺色底、灰框、方角，放在深色畫面上很突兀；提示是另外的彈出視窗，不會從主視窗繼承字型，所以字型也在這裡設。
+        外框方角，小圓角與陰影交給 DWM（RoundSmall，見 Radius.Control 上方的說明）；WPF 自己的陰影關掉，免得和 DWM 的疊兩層。
+    -->
+    <Style TargetType="{x:Type ToolTip}">
+        <Setter Property="Background" Value="{StaticResource Brush.Surface.Hover}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.ToolTip}" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="interop:DwmFrame.Corner" Value="RoundSmall" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToolTip}">
+                    <Border
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        右鍵選單、⋯ 選單與下拉選單（篩選、自動更新）共用的選單外觀。
+        系統預設的選單是淺色，放在深色主畫面上很突兀；項目多時（例如 repo 很多）可以捲動。
+        外框方角，圓角與陰影交給 DWM（Round，見 Radius.Control 上方的說明）；WPF 自己的陰影關掉，免得和 DWM 的疊兩層。
+    -->
+    <Style x:Key="Style.ContextMenu" TargetType="{x:Type ContextMenu}">
+        <Setter Property="Background" Value="{StaticResource Brush.Surface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.Menu}" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="interop:DwmFrame.Corner" Value="Round" />
+        <!--  項目面板同 StackPanel，量測時決定要不要留勾選欄（Themes/MenuItemsPanel.cs）  -->
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <themes:MenuItemsPanel />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <Border
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}">
+                        <ScrollViewer
+                            MaxHeight="{StaticResource Size.Dropdown.MaxHeight}"
+                            CanContentScroll="False"
+                            HorizontalScrollBarVisibility="Disabled"
+                            VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer.Resources>
+                                <Style BasedOn="{StaticResource Style.ScrollBar.Thin}" TargetType="{x:Type ScrollBar}" />
+                            </ScrollViewer.Resources>
+                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        選單項目（只有一層，沒有子選單）。IsChecked 時在左邊的勾選欄畫勾；選單裡沒有任何項目會顯示勾時，勾選欄收掉
+        （themes:MenuItemsPanel.HasCheckColumn，由 Style.ContextMenu 的項目面板在量測時決定，同 Windows 11）。
+        標題用 TextBlock 顯示（不處理存取鍵），分支名、repo 名裡的底線才不會被吃掉；WPF 內建選單的項目見 Style.MenuItem.Builtin。
+        有快速鍵文字（InputGestureText，例如 Ctrl+C）時顯示在右邊：Text.Muted、Caption 字級（Windows 11 選單的快速鍵比標題淡、小一號）。
+        滑過、選取與鍵盤焦點的框用 Radius.Control（Windows 11 選單項目的小圓角）。
+    -->
+    <Style x:Key="Style.MenuItem" TargetType="{x:Type MenuItem}">
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.MenuItem}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HeaderTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock
+                        MaxWidth="{StaticResource Size.Dropdown.ItemMaxWidth}"
+                        Text="{Binding}"
+                        TextTrimming="CharacterEllipsis" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type MenuItem}">
+                    <Border
+                        x:Name="ItemChrome"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{StaticResource Brush.Transparent}"
+                        BorderBrush="{StaticResource Brush.Transparent}"
+                        BorderThickness="{StaticResource Thickness.Border.Standard}"
+                        CornerRadius="{StaticResource Radius.Control}"
+                        SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid x:Name="CheckColumn" Width="{StaticResource Size.MenuItem.CheckColumn}">
+                                <Path
+                                    x:Name="CheckMark"
+                                    VerticalAlignment="Center"
+                                    Data="{StaticResource Geometry.MenuCheck}"
+                                    Stretch="None"
+                                    Stroke="{StaticResource Brush.Accent}"
+                                    StrokeEndLineCap="Round"
+                                    StrokeLineJoin="Round"
+                                    StrokeStartLineCap="Round"
+                                    StrokeThickness="{StaticResource Size.Icon.StrokeThickness}"
+                                    Visibility="Hidden" />
+                            </Grid>
+                            <!--  標題有範本（Style.MenuItem 的 TextBlock）時不處理存取鍵；Style.MenuItem.Builtin 拿掉範本，字串標題才會處理  -->
+                            <ContentPresenter
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                ContentSource="Header"
+                                RecognizesAccessKey="True" />
+                            <TextBlock
+                                x:Name="GestureText"
+                                Grid.Column="2"
+                                Margin="{StaticResource Margin.MenuItem.Gesture}"
+                                VerticalAlignment="Center"
+                                FontSize="{StaticResource FontSize.Caption}"
+                                Foreground="{StaticResource Brush.Text.Muted}"
+                                Text="{TemplateBinding InputGestureText}" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="themes:MenuItemsPanel.HasCheckColumn" Value="False">
+                            <Setter TargetName="CheckColumn" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="InputGestureText" Value="">
+                            <Setter TargetName="GestureText" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="ItemChrome" Property="Background" Value="{StaticResource Brush.Surface.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="ItemChrome" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Muted}" />
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        WPF 內建的右鍵選單（TextBox、PasswordBox 的「剪下／複製／貼上」，捲軸的「捲動這裡…」）：
+        這些選單由 WPF 自己建立，沒有程式的樣式。下面的隱含樣式套到所有沒指定樣式的 ContextMenu（捲軸的選單）；
+        TextBox、PasswordBox 的選單是 WPF 內部的子類別，由 Themes/BuiltinMenus.cs 用它的型別再登記一次同一個樣式。外觀同 Style.ContextMenu。
+        項目的標題是 WPF 的字串（例如「剪下(_T)」），要處理存取鍵，所以拿掉 Style.MenuItem 的 TextBlock 標題範本；
+        快速鍵文字（Ctrl+X 等）由 WPF 依命令自動帶出來。
+    -->
+    <Style
+        x:Key="Style.MenuItem.Builtin"
+        TargetType="{x:Type MenuItem}"
+        BasedOn="{StaticResource Style.MenuItem}">
+        <Setter Property="HeaderTemplate" Value="{x:Null}" />
+    </Style>
+
+    <!--  項目用選擇器套樣式：捲軸的選單有分隔線，直接設 ItemContainerStyle 會被套到分隔線上而丟例外（見 Themes/MenuItemStyleSelector.cs）  -->
+    <Style
+        x:Key="Style.ContextMenu.Builtin"
+        TargetType="{x:Type ContextMenu}"
+        BasedOn="{StaticResource Style.ContextMenu}">
+        <Setter Property="ItemContainerStyleSelector">
+            <Setter.Value>
+                <themes:MenuItemStyleSelector MenuItemStyle="{StaticResource Style.MenuItem.Builtin}" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style BasedOn="{StaticResource Style.ContextMenu.Builtin}" TargetType="{x:Type ContextMenu}" />
+
+    <!--
+        選單裡的分隔線（WPF 依 MenuItem.SeparatorStyleKey 找樣式，放在這裡就蓋過系統主題的淺色線）：
+        Surface.Hover 的 1 px 線，同系統匣選單的分隔線（Services/TrayMenuRenderer.cs）。
+    -->
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}">
+        <Setter Property="Margin" Value="{StaticResource Margin.Menu.Separator}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Separator}">
+                    <Border BorderBrush="{StaticResource Brush.Surface.Hover}" BorderThickness="{StaticResource Thickness.Border.Top}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  訊息條（同 SAM 主視窗的訊息條）：疊在畫面最下方，幾秒後自動消失  -->
+    <Style x:Key="Style.Border.Snackbar" TargetType="{x:Type Border}">
+        <Setter Property="Padding" Value="{StaticResource Padding.Snackbar}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Surface.Hover}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="CornerRadius" Value="{StaticResource Radius.Button}" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+    </Style>
+
+    <!--
+        ══════════════════════════════════════════════════════════════════
+        提示視窗（spec §9.4）新增的資源。同上：只引用既有的色彩 token。
+        ══════════════════════════════════════════════════════════════════
+    -->
+
+    <!--
+        提示框的最小寬度與內距同 SAM 的 ToastWindow（180、18,12）；最大寬度是設計選擇。
+        長的 repo 與 workflow 名稱改用省略號：標題最多兩行、彙總的每一行與內文都只有一行，tooltip 顯示全文。
+    -->
+    <sys:Double x:Key="Size.Toast.MinWidth">180</sys:Double>
+    <sys:Double x:Key="Size.Toast.MaxWidth">420</sys:Double>
+    <Thickness x:Key="Padding.Toast">18,12</Thickness>
+
+    <!--
+        標題的行高固定成 24，兩行的高度才是確定的 48（= 2 × 24），標題最多兩行。
+        24 原本是照 Segoe UI Variable 的自然行高（18 × 行距 1.3301 ≈ 23.94）取的；換成 FontFamily.Default（第一個字型 Consolas，
+        行距 1.1709）後自然行高約 21.08，維持 24 讓提示的高度不變，中文兩行之間也比較鬆。
+    -->
+    <sys:Double x:Key="Size.Toast.TitleLineHeight">24</sys:Double>
+    <sys:Double x:Key="Size.Toast.TitleMaxHeight">48</sys:Double>
+
+    <!--  每一行與「還有 N 筆」上方的間距（同 SAM 提示內文的 0,4,0,0）  -->
+    <Thickness x:Key="Margin.Toast.Line">0,4,0,0</Thickness>
+
+    <!--
+        標頭（像 Windows 11 通知）：App 圖示（Size.Icon）加「IsItGreenYet」，右邊是 ✕；標題在下一行。
+        ✕ 是 28x28（同列上 ⋯ 的 Size.Button.Chip.MinHeight）：上下各收 6，標頭只有圖示的 16 高；
+        右邊收 6，按鈕離框的右緣 12、✕ 的中心離右緣 26，和 App 圖示的中心離左緣 26（Padding.Toast 的 18 加圖示的一半 8）對稱；左邊留 6 和名稱隔開。
+    -->
+    <Thickness x:Key="Margin.Toast.Close">6,-6,-6,-6</Thickness>
+
+    <!--
+        提示裡可點的一行：看起來是文字，滑過時改成主要文字色並畫底線；太長時用省略號，tooltip 顯示全文。
+        不能取得焦點：提示視窗不搶焦點（spec §9.4），點了也不會把鍵盤焦點拉過來。
+    -->
+    <Style x:Key="Style.Button.ToastLine" TargetType="{x:Type Button}">
+        <Setter Property="Margin" Value="{StaticResource Margin.Toast.Line}" />
+        <Setter Property="ToolTip" Value="{Binding Content, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Background" Value="{StaticResource Brush.Transparent}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Caption}" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border Background="{TemplateBinding Background}">
+                        <TextBlock
+                            x:Name="LineText"
+                            Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                            TextTrimming="CharacterEllipsis" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+                            <Setter TargetName="LineText" Property="TextDecorations" Value="Underline" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        ══════════════════════════════════════════════════════════════════
+        repo 管理頁與設定頁（spec §11）新增的資源。同上：只引用既有的色彩 token。
+        ══════════════════════════════════════════════════════════════════
+    -->
+
+    <!--  設定頁各區塊（卡片）之間、區塊內各項目之間的距離（Spacing.Medium 的 12）  -->
+    <Thickness x:Key="Margin.Card.Stack">0,0,0,12</Thickness>
+    <Thickness x:Key="Margin.Gap.Top.Large">0,12,0,0</Thickness>
+
+    <!--
+        鍵盤焦點框（FocusVisualStyle）：2 px 的 Text.Primary 框，圓角同 Radius.Button，疊在按鈕外緣上（和 Style.Button.Primary
+        鍵盤焦點時的框一樣）。WPF 只在最近一次輸入是鍵盤（或系統設定「一律顯示焦點框」）時畫 FocusVisualStyle，
+        所以點滑鼠、或程式設定初始焦點（錯誤對話框一開就把焦點給「確定」）時不畫，同 Windows 11。
+    -->
+    <Style x:Key="Style.FocusVisual.Button">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border
+                        BorderBrush="{StaticResource Brush.Text.Primary}"
+                        BorderThickness="{StaticResource Thickness.Border.Focus}"
+                        CornerRadius="{StaticResource Radius.Button}"
+                        SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        連結的鍵盤焦點框：顏色、粗細和什麼時候畫同 Style.FocusVisual.Button，圓角用 Radius.Control（連結只有一行高，Radius.Button 會變成膠囊）。
+        焦點框的範圍就是文字的範圍，左右要往外 4，框線才不會壓在第一個和最後一個字上；連結左右要留間距（Margin.Gap.Left 的 6 夠）。
+    -->
+    <Thickness x:Key="Margin.FocusVisual.Link">-4,0</Thickness>
+    <Style x:Key="Style.FocusVisual.Link">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border
+                        Margin="{StaticResource Margin.FocusVisual.Link}"
+                        BorderBrush="{StaticResource Brush.Text.Primary}"
+                        BorderThickness="{StaticResource Thickness.Border.Focus}"
+                        CornerRadius="{StaticResource Radius.Control}"
+                        SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        強調色按鈕（設定頁的「儲存」、錯誤對話框的「確定」）：Windows 11 對話框的主要動作一律用強調色。
+        顏色與 hover、pressed、停用的外觀同 Style.Button.Primary（Accent 底、Accent.Foreground 字，對比 8.72:1）；
+        Primary 最小高 88、字級 18，太大，尺寸、內距與字級改成同 Style.Button.Secondary，和旁邊的「取消」一樣大。
+        鍵盤焦點改用 Style.FocusVisual.Button（只在鍵盤操作後出現）：Primary 的範本用 IsKeyboardFocused 觸發，
+        一取得焦點就畫框，衍生樣式拿不掉範本裡的觸發，所以範本另寫一份，只少了那個觸發。
+    -->
+    <Style
+        x:Key="Style.Button.Accent"
+        TargetType="{x:Type Button}"
+        BasedOn="{StaticResource Style.Button.Primary}">
+        <Setter Property="MinHeight" Value="{StaticResource Size.Button.Secondary.MinHeight}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.Button.Secondary}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource Style.FocusVisual.Button}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border
+                        x:Name="ButtonChrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{StaticResource Radius.Button}"
+                        SnapsToDevicePixels="True">
+                        <ContentPresenter
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ButtonChrome" Property="Background" Value="{StaticResource Brush.Accent.Hover}" />
+                            <Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{StaticResource Brush.Accent.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="ButtonChrome" Property="Background" Value="{StaticResource Brush.Accent.Pressed}" />
+                            <Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{StaticResource Brush.Accent.Pressed}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ButtonChrome" Property="Background" Value="{StaticResource Brush.Surface.Hover}" />
+                            <Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+                            <Setter Property="Foreground" Value="{StaticResource Brush.Text.Muted}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  數字欄位（秒數、行數）的寬度：同 SAM 設定頁秒數欄位的 90  -->
+    <sys:Double x:Key="Size.NumberBox.Width">90</sys:Double>
+
+    <!--  輸入框內距：同 Style.TextBox 的 10,7  -->
+    <Thickness x:Key="Padding.Input">10,7</Thickness>
+
+    <!--  單選鈕：外框同 Style.CheckBox 的 20x20，做成圓形；選取時中間畫實心圓點（設計選擇 8）  -->
+    <sys:Double x:Key="Size.RadioButton">20</sys:Double>
+    <CornerRadius x:Key="Radius.RadioButton">10</CornerRadius>
+    <sys:Double x:Key="Size.RadioButton.Dot">8</sys:Double>
+
+    <!--  核取方塊與單選鈕的文字和方框的距離：同 Style.CheckBox 的 10  -->
+    <Thickness x:Key="Margin.Toggle.Content">10,0,0,0</Thickness>
+
+    <!--
+        輸入框（設定頁的數字欄位、repo 管理頁的搜尋框）：外觀同 Style.TextBox，但內距只算一次。
+        TextBox 會把自己的 Padding 再交給 PART_ContentHost（ScrollViewer）裡的內容（2026-10-26 實測：ScrollContentPresenter 的 Margin 也是 10,7），
+        Style.TextBox 的範本又把同一個 Padding 設成 PART_ContentHost 的 Margin，上下左右各多算一次：
+        高度變成 49 而不是 35，輸入的文字也比提示字（Margin.Search.Placeholder）多內縮 10。這裡的範本不再設 Margin。
+    -->
+    <Style x:Key="Style.TextBox.Input" TargetType="{x:Type TextBox}" BasedOn="{StaticResource Style.TextBox}">
+        <Setter Property="Padding" Value="{StaticResource Padding.Input}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TextBox}">
+                    <Border
+                        x:Name="Chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{StaticResource Radius.Button}"
+                        SnapsToDevicePixels="True">
+                        <ScrollViewer
+                            x:Name="PART_ContentHost"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="Hidden"
+                            VerticalScrollBarVisibility="Hidden" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Brush.Surface}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="{StaticResource Thickness.Border.Focus}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  PAT 輸入框（spec §11.2）：外觀同 Style.TextBox.Input（內距只算一次，理由同上）  -->
+    <Style x:Key="Style.PasswordBox" TargetType="{x:Type PasswordBox}">
+        <Setter Property="Background" Value="{StaticResource Brush.Window.Background}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Thickness.Border.Standard}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        <Setter Property="CaretBrush" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="SelectionBrush" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="Padding" Value="{StaticResource Padding.Input}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type PasswordBox}">
+                    <Border
+                        x:Name="Chrome"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{StaticResource Radius.Button}"
+                        SnapsToDevicePixels="True">
+                        <ScrollViewer
+                            x:Name="PART_ContentHost"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="Hidden"
+                            VerticalScrollBarVisibility="Hidden" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Brush.Surface}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="{StaticResource Thickness.Border.Focus}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--  單選鈕（設定頁的認證方式，spec §11.2）：外觀同 Style.CheckBox，改成圓形  -->
+    <Style x:Key="Style.RadioButton" TargetType="{x:Type RadioButton}">
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Primary}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type RadioButton}">
+                    <StackPanel Background="{StaticResource Brush.Transparent}" Orientation="Horizontal">
+                        <Border
+                            x:Name="Box"
+                            Width="{StaticResource Size.RadioButton}"
+                            Height="{StaticResource Size.RadioButton}"
+                            VerticalAlignment="Center"
+                            Background="{StaticResource Brush.Window.Background}"
+                            BorderBrush="{StaticResource Brush.Border}"
+                            BorderThickness="{StaticResource Thickness.Border.Standard}"
+                            CornerRadius="{StaticResource Radius.RadioButton}"
+                            SnapsToDevicePixels="True">
+                            <Ellipse
+                                x:Name="Dot"
+                                Width="{StaticResource Size.RadioButton.Dot}"
+                                Height="{StaticResource Size.RadioButton.Dot}"
+                                Fill="{StaticResource Brush.Accent.Foreground}"
+                                Visibility="Collapsed" />
+                        </Border>
+                        <ContentPresenter
+                            Margin="{StaticResource Margin.Toggle.Content}"
+                            VerticalAlignment="Center"
+                            RecognizesAccessKey="False" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Brush.Accent}" />
+                            <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Brush.Accent.Hover}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Brush.Text.Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="{StaticResource Opacity.Disabled}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        ══════════════════════════════════════════════════════════════════
+        錯誤對話框（Views/ErrorDialog.xaml，取代系統 MessageBox）新增的資源。同上：只引用既有的色彩 token。
+        版面仿 Windows 11 的 ContentDialog：內容區 Surface 底，按鈕列另一層 Window.Background 底、上緣一條分隔線。
+        ══════════════════════════════════════════════════════════════════
+    -->
+
+    <!--
+        狀態圖示的圓與叉（16x16 座標系，圓心 (8,8)、半徑 6，筆畫 2 時外緣落在 1～15）：清單列的狀態圖示（Controls/StatusIcon.xaml）
+        與錯誤對話框的錯誤圖示共用，所以放在這裡；其他狀態的形狀只有清單列用，留在 StatusIcon.xaml。
+    -->
+    <StreamGeometry x:Key="Geometry.Status.Circle">M 8,2 A 6,6 0 1 1 8,14 A 6,6 0 1 1 8,2 Z</StreamGeometry>
+    <StreamGeometry x:Key="Geometry.Status.Cross">M 5.7,5.7 L 10.3,10.3 M 10.3,5.7 L 5.7,10.3</StreamGeometry>
+
+    <!--
+        寬度：啟動失敗的訊息含 error.log 的完整路徑（%LOCALAPPDATA%\IsItGreenYet\error.log）。使用者名稱 7 個字元時路徑是 53 個字元，
+        Consolas 14 一個字寬 7.7（0.55 em），約 408；480 扣掉內距 24×2 與框線 1×2 還有 430，放得下一整行（設計選擇；名稱更長時自動換行）。
+        訊息最大高度 320：未預期例外的訊息可能很長，超過時在訊息區裡捲動，按鈕列一直看得到（設計選擇）。
+    -->
+    <sys:Double x:Key="Size.Dialog.Width">480</sys:Double>
+    <sys:Double x:Key="Size.Dialog.MessageMaxHeight">320</sys:Double>
+
+    <!--  錯誤圖示：狀態圖示的形狀放大到 20（標題字級 18 的旁邊，16 太小；設計選擇）  -->
+    <sys:Double x:Key="Size.Dialog.Icon">20</sys:Double>
+
+    <!--  內容區與按鈕列的內距（同 Windows 11 ContentDialog 的 24）、錯誤圖示和標題的距離（Spacing.Medium 的 12）  -->
+    <Thickness x:Key="Padding.Dialog">24</Thickness>
+    <Thickness x:Key="Margin.Dialog.Icon">0,0,12,0</Thickness>
+
+    <!--
+        對話框（錯誤對話框、授權與第三方聲明）裡唯讀、可以選取複製的訊息：看起來是一般文字（沒有框、沒有底色），選取色用 Accent；
+        超過最大高度時用細捲軸捲動。範本只有 PART_ContentHost，不畫系統預設的藍色焦點框。
+        不是 Tab 停駐點（同系統 MessageBox 與 Windows 11 對話框的內文：Tab 只在按鈕之間移動）；滑鼠照樣可以點進去選取。
+        鍵盤捲動（↑↓、PageUp／PageDown、Home／End）與 Ctrl+C 由對話框處理，見 Views/DialogMessageKeys.cs。
+    -->
+    <Style x:Key="Style.TextBox.Message" TargetType="{x:Type TextBox}">
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Background" Value="{StaticResource Brush.Transparent}" />
+        <Setter Property="BorderThickness" Value="{StaticResource Spacing.None}" />
+        <Setter Property="Padding" Value="{StaticResource Spacing.None}" />
+        <Setter Property="Foreground" Value="{StaticResource Brush.Text.Secondary}" />
+        <Setter Property="SelectionBrush" Value="{StaticResource Brush.Accent}" />
+        <Setter Property="FontFamily" Value="{StaticResource FontFamily.Default}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="IsReadOnlyCaretVisible" Value="False" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TextBox}">
+                    <ScrollViewer x:Name="PART_ContentHost" Focusable="False">
+                        <ScrollViewer.Resources>
+                            <Style BasedOn="{StaticResource Style.ScrollBar.Thin}" TargetType="{x:Type ScrollBar}" />
+                        </ScrollViewer.Resources>
+                    </ScrollViewer>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

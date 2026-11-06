@@ -1,0 +1,123 @@
+<Window
+    x:Class="IsItGreenYet.App.Views.ToastWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:interop="clr-namespace:IsItGreenYet.App.Interop"
+    xmlns:l="clr-namespace:IsItGreenYet.App.Localization"
+    Title="IsItGreenYet"
+    interop:DwmFrame.Corner="Round"
+    AllowsTransparency="False"
+    Background="{StaticResource Brush.Surface}"
+    BorderBrush="{StaticResource Brush.Accent}"
+    BorderThickness="{StaticResource Thickness.Border.Standard}"
+    Focusable="False"
+    ResizeMode="NoResize"
+    ShowActivated="False"
+    ShowInTaskbar="False"
+    SizeToContent="WidthAndHeight"
+    Topmost="True"
+    UseLayoutRounding="True"
+    WindowStyle="None">
+    <!--
+        提示視窗（spec §9.4）：沿用 SAM 的 ToastWindow（右下角、Topmost、不搶焦點、不出現在工作列），
+        加上多行彙總、可點的行、右上角的 ✕；框線色依語氣（由程式設定視窗的 BorderBrush）。
+        Windows 11 外觀：不透明視窗，圓角、原生陰影與框線色交給 DWM（Interop/DwmFrame.cs）；視窗自己畫方角 1 px 框線，DWM 不支援時就是方角。
+        最上面一行是 App 圖示加名稱（同 Windows 11 通知），標題在下一行。
+        整個框可以點：單筆開啟該 run，彙總點空白處（包括標頭）開主視窗；行與 ✕ 是按鈕，點了不會再觸發框的動作。
+        版面取整（同主視窗的 Style.Window.Main）：寬度跟著文字是小數時，✕ 會落在半個像素上，
+        而 ✕ 的框（SnapsToDevicePixels）會對齊像素、圖示不會，兩者差 0.4 px（2026-10-26 量測）。
+    -->
+    <Border
+        x:Name="Frame"
+        MinWidth="{StaticResource Size.Toast.MinWidth}"
+        MaxWidth="{StaticResource Size.Toast.MaxWidth}"
+        Padding="{StaticResource Padding.Toast}"
+        Background="{StaticResource Brush.Surface}"
+        Cursor="Hand"
+        MouseLeftButtonDown="OnFrameMouseLeftButtonDown"
+        MouseLeftButtonUp="OnFrameMouseLeftButtonUp">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!--  標頭：App 圖示（由程式依 DPI 挑 app.ico 的大小）與名稱；圖示要有報讀名稱，否則報讀軟體會唸「沒有名稱的影像」  -->
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <Image
+                    x:Name="AppIcon"
+                    Width="{StaticResource Size.Icon}"
+                    Height="{StaticResource Size.Icon}"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="{l:T ToastAppIcon}" />
+                <TextBlock
+                    Margin="{StaticResource Margin.Gap.Left}"
+                    VerticalAlignment="Center"
+                    Style="{StaticResource Style.Text.Muted}"
+                    Text="IsItGreenYet" />
+            </StackPanel>
+
+            <!--  ✕：28x28、內距歸零（同列上的 ⋯），16x16 的圖示才放得下  -->
+            <Button
+                x:Name="CloseButton"
+                Grid.Column="1"
+                Width="{StaticResource Size.Button.Chip.MinHeight}"
+                Height="{StaticResource Size.Button.Chip.MinHeight}"
+                Margin="{StaticResource Margin.Toast.Close}"
+                Padding="{StaticResource Spacing.None}"
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{l:T CommonClose}"
+                Click="OnCloseClick"
+                Focusable="False"
+                Style="{StaticResource Style.Button.Icon}"
+                ToolTip="{l:T CommonClose}">
+                <Path Data="{StaticResource Geometry.Close}" Style="{StaticResource Style.Path.Icon}" />
+            </Button>
+
+            <!--  標題最多兩行，超過的部分用省略號，tooltip 顯示全文（長的 repo 與 workflow 名稱不會把提示一直撐高）  -->
+            <TextBlock
+                x:Name="TitleText"
+                Grid.Row="1"
+                Grid.ColumnSpan="2"
+                MaxHeight="{StaticResource Size.Toast.TitleMaxHeight}"
+                Margin="{StaticResource Margin.Gap.Top}"
+                LineHeight="{StaticResource Size.Toast.TitleLineHeight}"
+                LineStackingStrategy="BlockLineHeight"
+                Style="{StaticResource Style.Text.Title}"
+                TextTrimming="CharacterEllipsis"
+                TextWrapping="Wrap"
+                ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" />
+
+            <!--  單筆時是內文一行；彙總時最多 SummaryToastMaxLines 行，每行開那筆 run  -->
+            <ItemsControl
+                x:Name="LineList"
+                Grid.Row="2"
+                Grid.ColumnSpan="2"
+                Focusable="False">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button
+                            Click="OnLineClick"
+                            Content="{Binding Text}"
+                            Style="{StaticResource Style.Button.ToastLine}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!--  「還有 N 筆」：不是按鈕，點了算點空白處（開主視窗）  -->
+            <TextBlock
+                x:Name="MoreText"
+                Grid.Row="3"
+                Grid.ColumnSpan="2"
+                Margin="{StaticResource Margin.Toast.Line}"
+                Style="{StaticResource Style.Text.Muted}"
+                Visibility="Collapsed" />
+        </Grid>
+    </Border>
+</Window>

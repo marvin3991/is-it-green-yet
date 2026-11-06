@@ -1,0 +1,38 @@
+[
+  {
+    "id": 2003,
+    "name": "sample-docs",
+    "full_name": "octo-org/sample-docs",
+    "owner": {
+      "login": "octo-org",
+      "id": 3001,
+      "type": "Organization"
+    },
+    "private": true,
+    "visibility": "internal",
+    "fork": false,
+    "archived": false,
+    "disabled": true,
+    "pushed_at": "2026-09-30T23:10:00Z",
+    "default_branch": "release/2026",
+    "html_url": "https://github.com/octo-org/sample-docs"
+  },
+  {
+    "id": 2004,
+    "name": "sample-app",
+    "full_name": "alice/sample-app",
+    "owner": {
+      "login": "alice",
+      "id": 1001,
+      "type": "User"
+    },
+    "private": false,
+    "visibility": "public",
+    "fork": true,
+    "archived": false,
+    "disabled": false,
+    "pushed_at": "2026-10-20T08:00:00Z",
+    "default_branch": "main",
+    "html_url": "https://github.com/alice/sample-app"
+  }
+]

@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- 系統匣圖示用 WinForms 的 NotifyIcon，免第三方套件 -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>IsItGreenYet</AssemblyName>
+    <RootNamespace>IsItGreenYet.App</RootNamespace>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Product>IsItGreenYet</Product>
+    <AssemblyTitle>IsItGreenYet</AssemblyTitle>
+    <Copyright>Copyright (c) 2026 Marvin (marvin3991)</Copyright>
+    <Description>一眼看到自己名下所有 repo 的 GitHub Actions 是否綠燈</Description>
+    <Version>0.3.0</Version>
+    <!--
+      衛星資源只帶介面的兩種語言（設定頁的語言選單）。目前只發相依框架版（docs/spec-deviations.md）：
+      WPF 內建文字（輸入框右鍵的剪下／複製／貼上等，UI 執行緒的文化 zh-TW 依序找 zh-Hant）用目標電腦
+      .NET Desktop Runtime 裡的，不受這個設定影響（只裝 Runtime 時在不在還沒驗證，見手動測試 M27）。
+      留著是因為之後要發自封式時才需要：只寫 en 時一個語系資料夾都沒有，繁體中文介面的這些文字會是英文。
+    -->
+    <SatelliteResourceLanguages>en;zh-Hant</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IsItGreenYet.Core\IsItGreenYet.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 視窗的 Icon 以 pack URI 讀取（同 SAM）；圖示由 tools/generate-icon.ps1 產生 -->
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      同時啟用 WPF 與 WinForms 會讓 Application、MessageBox、ContextMenu、MenuItem、Brush 等型別撞名。
+      這是 WPF 專案，全域拿掉 WinForms 與 GDI+ 的 using：
+      只有系統匣相關的檔案需要它們，在該檔案內自行用別名引用即可。
+      另外 WinForms 的隱含 using 組合不含 System.IO，這裡補回來。
+    -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+</Project>

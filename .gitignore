@@ -1,0 +1,35 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.user
+*.suo
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.*
+
+# .NET build output
+bin/
+obj/
+publish/
+artifacts/
+*.binlog
+TestResults/
+
+# Logs
+*.log
+
+# Packaging output
+dist/
+*.zip

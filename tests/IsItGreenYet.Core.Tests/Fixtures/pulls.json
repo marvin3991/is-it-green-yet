@@ -1,0 +1,62 @@
+[
+  {
+    "id": 77017,
+    "number": 17,
+    "state": "open",
+    "title": "Add dark mode",
+    "html_url": "https://github.com/octo-org/sample-app/pull/17",
+    "user": { "login": "bob", "id": 1002, "type": "User" },
+    "head": {
+      "label": "octo-org:feature/dark-mode",
+      "ref": "feature/dark-mode",
+      "sha": "1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d",
+      "repo": { "id": 2001, "name": "sample-app", "full_name": "octo-org/sample-app" }
+    },
+    "base": {
+      "label": "octo-org:main",
+      "ref": "main",
+      "sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+      "repo": { "id": 2001, "name": "sample-app", "full_name": "octo-org/sample-app" }
+    }
+  },
+  {
+    "id": 77018,
+    "number": 18,
+    "state": "open",
+    "title": "Fix typo in README",
+    "html_url": "https://github.com/octo-org/sample-app/pull/18",
+    "user": { "login": "fork-user", "id": 5001, "type": "User" },
+    "head": {
+      "label": "fork-user:patch-1",
+      "ref": "patch-1",
+      "sha": "f00dbabe0123456789abcdef0123456789abcdef",
+      "repo": { "id": 4001, "name": "sample-app", "full_name": "fork-user/sample-app" }
+    },
+    "base": {
+      "label": "octo-org:main",
+      "ref": "main",
+      "sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+      "repo": { "id": 2001, "name": "sample-app", "full_name": "octo-org/sample-app" }
+    }
+  },
+  {
+    "id": 77019,
+    "number": 19,
+    "state": "open",
+    "title": "Old proposal from a deleted fork",
+    "html_url": "https://github.com/octo-org/sample-app/pull/19",
+    "user": null,
+    "head": {
+      "label": "unknown:old-idea",
+      "ref": "old-idea",
+      "sha": "abcdefabcdefabcdefabcdefabcdefabcdefabcd",
+      "repo": null
+    },
+    "base": {
+      "label": "octo-org:main",
+      "ref": "main",
+      "sha": "dcf27ad0c1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6",
+      "repo": { "id": 2001, "name": "sample-app", "full_name": "octo-org/sample-app" }
+    }
+  }
+]

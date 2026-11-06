@@ -1,0 +1,33 @@
+{
+  "total_count": 3,
+  "workflows": [
+    {
+      "id": 161335,
+      "name": "CI",
+      "path": ".github/workflows/ci.yml",
+      "state": "active",
+      "created_at": "2026-01-05T09:00:00Z",
+      "updated_at": "2026-10-01T09:00:00Z",
+      "html_url": "https://github.com/octo-org/sample-app/blob/main/.github/workflows/ci.yml",
+      "badge_url": "https://github.com/octo-org/sample-app/workflows/CI/badge.svg"
+    },
+    {
+      "id": 161336,
+      "name": "Release",
+      "path": ".github/workflows/release.yml",
+      "state": "disabled_manually",
+      "created_at": "2026-01-05T09:00:00Z",
+      "updated_at": "2026-05-01T09:00:00Z",
+      "html_url": "https://github.com/octo-org/sample-app/blob/main/.github/workflows/release.yml"
+    },
+    {
+      "id": 161337,
+      "name": "Nightly",
+      "path": ".github/workflows/nightly.yml",
+      "state": "disabled_inactivity",
+      "created_at": "2026-02-10T09:00:00Z",
+      "updated_at": "2026-08-10T09:00:00Z",
+      "html_url": "https://github.com/octo-org/sample-app/blob/main/.github/workflows/nightly.yml"
+    }
+  ]
+}
