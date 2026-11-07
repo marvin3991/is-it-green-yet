@@ -2,7 +2,7 @@
 
 給開發者看的文件，只有繁體中文。使用者文件見 [README](../README.zh-TW.md)。
 
-文件裡的 commit 編號（例如 `adccd2b`）與 PR 編號（例如 #24）是公開前在 private repo 開發時的紀錄，公開的 repo 從單一 commit 開始，找不到這些編號。
+文件裡 0.3.0 以前的 commit 編號（例如 `adccd2b`）與 PR 編號（例如 #24）是公開前在 private repo 開發時的紀錄，公開的 repo 從單一 commit 開始，找不到這些編號。0.3.1 起（從 [#1](https://github.com/marvin3991/is-it-green-yet/pull/1) 開始）的 commit 與 PR 都在公開的 repo。
 
 ## 進度與驗收摘要
 
